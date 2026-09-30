@@ -210,3 +210,26 @@ grant execute on function
   to authenticated;
 -- 内部関数は公開しない
 revoke execute on function public._group_week(uuid, date) from public, anon, authenticated;
+
+------------------------------------------------------------------
+-- アカウント削除(App Store の審査要件: アプリ内からアカウントを削除できること)
+-- auth.users を消すと、プロフィール・タスク・記録・友だち関係などが CASCADE で全部消える
+------------------------------------------------------------------
+create or replace function public.delete_my_account() returns void
+language plpgsql security definer set search_path = public, auth, pg_temp as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'SQ_UNAUTHENTICATED'; end if;
+  -- グループのオーナーだった場合は、残っているメンバーに引き継ぐ(誰もいなければ解散)
+  update public.groups g set owner_id = (
+    select gm.user_id from public.group_members gm
+     where gm.group_id = g.id and gm.status = 'joined' and gm.user_id <> uid
+     order by gm.joined_at limit 1)
+   where g.owner_id = uid
+     and exists (select 1 from public.group_members gm
+                  where gm.group_id = g.id and gm.status = 'joined' and gm.user_id <> uid);
+  delete from auth.users where id = uid;
+end $$;
+
+revoke execute on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;

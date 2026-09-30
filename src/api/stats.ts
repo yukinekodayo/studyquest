@@ -1,0 +1,27 @@
+import { supabase } from '@/lib/supabase';
+import { rpc } from './rpc';
+import type { StampRow } from '@/types/database';
+
+export const getMyStats = () => rpc('get_my_stats');
+
+export async function fetchStampsBetween(from: string, to: string): Promise<StampRow[]> {
+  const { data, error } = await supabase
+    .from('stamps')
+    .select('*')
+    .gte('earned_date', from)
+    .lte('earned_date', to)
+    .order('earned_date');
+  if (error) throw error;
+  return data;
+}
+
+/** 直近の連続記録の表示用(今日を含む過去N日の達成日) */
+export async function fetchRecentStamps(fromDate: string): Promise<StampRow[]> {
+  const { data, error } = await supabase
+    .from('stamps')
+    .select('*')
+    .gte('earned_date', fromDate)
+    .order('earned_date');
+  if (error) throw error;
+  return data;
+}

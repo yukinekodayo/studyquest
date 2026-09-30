@@ -127,3 +127,39 @@ describe('グループ / 協力チャレンジ', () => {
     expect(await errorOf(db.as(me).rpc('invite_to_group', gid, extra))).toContain('SQ_GROUP_FULL');
   });
 });
+
+describe('アカウント削除', () => {
+  it('自分のデータが全部消え、フレンドの一覧からもいなくなる。グループはオーナーが引き継がれる', async () => {
+    const me = await db.signup('me');
+    const friend = await db.signup('friend');
+    const other = await db.signup('other');
+    await makeFriends(me, friend);
+    await makeFriends(me, other);
+    await clearToday(me);
+    await db.as(me).rpc('send_reaction', friend, 'fire');
+    const gid = await db.as(me).rpc('create_group', 'G');
+    await db.as(me).rpc('invite_to_group', gid, friend);
+    await db.as(friend).rpc('respond_group_invite', gid, true);
+
+    await db.as(me).rpc('delete_my_account');
+
+    for (const t of ['profiles', 'user_stats', 'tasks', 'study_sessions', 'daily_completions', 'stamps', 'friendships', 'friend_requests', 'reactions']) {
+      const col = t === 'profiles' ? 'id' : t === 'friendships' ? 'user_a' : t === 'friend_requests' ? 'from_user' : t === 'reactions' ? 'from_user' : 'user_id';
+      const rows = await db.admin(`select * from ${t} where ${col} = $1`, [me]);
+      expect(rows, t).toHaveLength(0);
+    }
+    expect(await db.admin('select * from auth.users where id = $1', [me])).toHaveLength(0);
+    // 友だち側は影響を受けない
+    expect((await db.as(friend).q('select * from public.friends_overview()')).map((r) => r.nickname)).toEqual(['friend']);
+    const [g] = await db.admin('select owner_id from groups where id = $1', [gid]);
+    expect(g.owner_id).toBe(friend);
+    expect(await errorOf(db.as(friend).rpc('send_reaction', me, 'fire'))).toContain('SQ_NOT_FRIENDS');
+  });
+
+  it('他人のアカウントは消せない(自分のIDにしか作用しない)', async () => {
+    const a = await db.signup('a');
+    const b = await db.signup('b');
+    await db.as(a).rpc('delete_my_account');
+    expect(await db.admin('select id from profiles where id = $1', [b])).toHaveLength(1);
+  });
+});

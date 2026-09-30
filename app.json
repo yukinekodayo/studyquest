@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "StudyQuest",
+    "slug": "studyquest",
+    "scheme": "studyquest",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "backgroundColor": "#FBF6EA",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FBF6EA"
+    },
+    "ios": {
+      "bundleIdentifier": "app.studyquest.mobile",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "app.studyquest.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FBF6EA"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ]
+  }
+}
