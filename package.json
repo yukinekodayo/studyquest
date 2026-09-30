@@ -7,10 +7,17 @@
     "start": "expo start",
     "ios": "expo start --ios",
     "android": "expo start --android",
+    "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:db": "vitest run tests/db",
-    "test:unit": "vitest run tests/unit"
+    "test:unit": "vitest run --project unit",
+    "test:db": "vitest run --project db",
+    "stack": "node scripts/local-stack/start.mjs",
+    "assets": "node scripts/make-assets.mjs",
+    "web:export": "expo export -p web --output-dir dist --clear",
+    "web:serve": "node scripts/e2e/serve.mjs 8081",
+    "e2e:phase1": "node scripts/e2e/phase1.mjs",
+    "e2e:phase2": "node scripts/e2e/phase2.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/dela-gothic-one": "^0.4.1",

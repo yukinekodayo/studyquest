@@ -86,7 +86,7 @@ export default function GroupDetailScreen() {
       <View style={styles.questHead}>
         <Text variant="label" color={colors.blue}>今週の協力クエスト</Text>
         <View style={styles.questTitleRow}>
-          <Text variant="title" size={21} style={styles.grow}>みんなで{g.week.target}日分の{'\n'}デイリークリアを達成しよう</Text>
+          <Text variant="title" size={18} style={styles.grow}>みんなで{g.week.target}日分の{'\n'}デイリークリアを達成しよう</Text>
           <View style={styles.teamStamp}>
             <Stamp type="team" size={64} locked={!reached} />
             <Text variant="caption" size={10}>{reached ? '協力ハンコ獲得！' : '達成すると協力ハンコ'}</Text>

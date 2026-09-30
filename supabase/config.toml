@@ -1,0 +1,10 @@
+# Supabase CLI 用の最小設定(`supabase start` でローカル環境を起動する場合)。
+# ※ このリポジトリの作成環境には Docker が無かったため、この設定での `supabase start` は未検証です。
+project_id = "studyquest"
+
+[auth]
+# ローカル開発ではメール確認なしで登録できるようにする(本番はダッシュボードで設定)
+enable_signup = true
+
+[auth.email]
+enable_confirmations = false

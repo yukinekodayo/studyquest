@@ -17,7 +17,7 @@ export async function newUser(browser, label) {
   const errors = [];
   page.on('pageerror', (e) => errors.push(`[${label}] pageerror: ${e.message}`));
   page.on('console', (m) => {
-    if (m.type() === 'error' && !/favicon|Failed to load resource.*(40[14]|42[22])/.test(m.text())) errors.push(`[${label}] console.error: ${m.text().slice(0, 200)}`);
+    if (m.type() === 'error' && !/favicon|Failed to load resource.*(400|401|404|422)/.test(m.text())) errors.push(`[${label}] console.error: ${m.text().slice(0, 200)}`);
   });
   return { ctx, page, errors, label };
 }

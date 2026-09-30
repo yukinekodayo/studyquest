@@ -150,6 +150,18 @@ await page.goto(`${BASE}/stamps`, { waitUntil: 'domcontentloaded' });
 await tid(page, 'stat-total').waitFor();
 check(norm(await tid(page, 'stat-total').textContent()).startsWith('1'), '累計達成は1日のまま');
 
+console.log('11.5 再取得ループが起きていない(アイドル時のAPI呼び出し回数)');
+for (const path of ['home', 'quest', 'friends', 'stamps', 'profile', 'groups', 'study-party']) {
+  await page.goto(`${BASE}/${path}`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(2500);
+  let n = 0;
+  const onReq = (r) => { if (r.url().includes('/rest/v1/')) n++; };
+  page.on('request', onReq);
+  await page.waitForTimeout(5000);
+  page.off('request', onReq);
+  check(n <= 8, `/${path}: アイドル5秒間のAPI呼び出し ${n} 回(ポーリングのみ)`);
+}
+
 console.log('12. マイページ');
 await tid(page, 'nav-profile').click();
 await tid(page, 'profile-name').waitFor();

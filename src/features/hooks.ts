@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { fetchMyProfile, updateMyProfile } from '@/api/auth';
 import { fetchFriendsOverview, fetchIncomingRequests, fetchReceivedReactions } from '@/api/friends';
 import { fetchGroupDetail, fetchMyGroups } from '@/api/groups';
@@ -94,12 +94,19 @@ export function useRefreshAll() {
   return useCallback(() => qc.invalidateQueries(), [qc]);
 }
 
-/** 画面に戻ってきたときに最新化する */
+/**
+ * 画面にフォーカスが戻ったときに1回だけ最新化する。
+ * 呼び出し側が毎レンダーで関数を作り直しても再取得ループにならないよう、最新の関数は ref で保持する。
+ */
 export function useRefetchOnFocus(refetch: () => unknown) {
+  const latest = useRef(refetch);
+  useEffect(() => {
+    latest.current = refetch;
+  });
   useFocusEffect(
     useCallback(() => {
-      void refetch();
-    }, [refetch]),
+      void latest.current();
+    }, []),
   );
 }
 
