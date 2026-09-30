@@ -74,7 +74,9 @@ export interface DayResult {
   must_total?: number;
   must_done?: number;
   streak?: number;
+  /** 押すことになるハンコの種類(まだ押していない) */
   stamp_type?: StampType | null;
+  stamp_claimed?: boolean;
   xp_bonus?: number;
 }
 
@@ -83,6 +85,13 @@ export interface CompleteTaskResult {
   xp_gained: number;
   day?: DayResult;
   already_finished?: boolean;
+}
+
+export interface ClaimStampResult {
+  stamp_type: StampType;
+  streak: number;
+  earned_date: string;
+  newly_claimed: boolean;
 }
 
 export interface MyStats {
@@ -95,6 +104,11 @@ export interface MyStats {
   total_days: number;
   month_days: number;
   cleared_today: boolean;
+  today_streak: number | null;
+  today_stamp_type: StampType | null;
+  today_stamp_claimed: boolean;
+  /** 達成したのにまだ押していない日 */
+  unclaimed_dates: string[];
   stamp_counts: Partial<Record<StampType, number>>;
   today: string;
   server_now: string;
@@ -204,6 +218,7 @@ export type Database = {
       get_session_state: { Args: { p_task_id: string }; Returns: SessionState | null };
       get_active_session: { Args: Empty; Returns: SessionState | null };
       get_my_stats: { Args: Empty; Returns: MyStats };
+      claim_stamp: { Args: { p_date?: string | null }; Returns: ClaimStampResult };
       send_friend_request: { Args: { p_code: string }; Returns: { result: 'requested' | 'friends' } };
       respond_friend_request: { Args: { p_request_id: string; p_accept: boolean }; Returns: undefined };
       remove_friend: { Args: { p_friend_id: string }; Returns: undefined };

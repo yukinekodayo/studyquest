@@ -2,11 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
+import { claimStamp } from '@/api/stats';
 import { addMonths, buildMonthGrid, parseYmd, toYmd, WEEK_HEADERS_MON_FIRST } from '@/domain/dates';
 import { DAILY_STAMP_TYPES, STAMP_META, type StampType } from '@/domain/stamps';
 import { useMonthStamps, useRefetchOnFocus, useStats } from '@/features/hooks';
 import { Card } from '@/ui/Card';
-import { EmptyStamp, Stamp } from '@/ui/Stamp';
+import { EmptyStamp, PendingStamp, Stamp } from '@/ui/Stamp';
+import { useRun } from '@/ui/Toast';
 import { Screen } from '@/ui/Screen';
 import { ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
@@ -15,6 +18,8 @@ import { colors, radius } from '@/ui/theme';
 /** ハンコ帳: カレンダーで達成状況を見る */
 export default function StampsScreen() {
   const router = useRouter();
+  const run = useRun();
+  const qc = useQueryClient();
   const stats = useStats();
   const today = stats.data?.today;
   const t = today ? parseYmd(today) : null;
@@ -30,6 +35,11 @@ export default function StampsScreen() {
   const s = stats.data;
   const byDate = new Map((stamps.data ?? []).map((st) => [st.earned_date, st.stamp_type]));
   const grid = buildMonthGrid(ym.y, ym.m);
+  const unclaimed = new Set(s.unclaimed_dates);
+  const press = async (ymd: string) => {
+    const r = await run(() => claimStamp(ymd));
+    if (r) await qc.invalidateQueries();
+  };
   const isCurrentMonth = offset === 0;
   const counts = s.stamp_counts;
   const kinds = DAILY_STAMP_TYPES.filter((k) => (counts[k] ?? 0) > 0).length;
@@ -37,7 +47,7 @@ export default function StampsScreen() {
   return (
     <Screen withNav>
       <View style={styles.header}>
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/profile'))} style={styles.back} accessibilityRole="button" accessibilityLabel="もどる" testID="stamps-back">
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.navigate('/profile'))} style={styles.back} accessibilityRole="button" accessibilityLabel="もどる" testID="stamps-back">
           <Ionicons name="chevron-back" size={22} color={colors.ink} />
         </Pressable>
         <Text variant="title">ハンコ帳</Text>
@@ -48,6 +58,12 @@ export default function StampsScreen() {
         <Stat icon="star" color={colors.blue} label="最高連続" value={s.longest_streak} testID="stat-longest" />
         <Stat icon="checkmark" color={colors.green} label="累計達成" value={s.total_days} testID="stat-total" />
       </View>
+
+      {unclaimed.size > 0 ? (
+        <Card tone="yellow" style={styles.pending} testID="pending-banner">
+          <Text variant="bodyBold" size={14}>まだ押していないハンコが{unclaimed.size}日分あるよ。カレンダーの「押す」をタップしてね</Text>
+        </Card>
+      ) : null}
 
       <Card style={styles.cal}>
         <View style={styles.monthRow}>
@@ -73,11 +89,12 @@ export default function StampsScreen() {
               const type = byDate.get(ymd) as StampType | undefined;
               const isToday = ymd === today;
               const future = ymd > (today ?? '');
+              const canPress = !type && unclaimed.has(ymd);
               return (
-                <View key={di} style={[styles.cell, styles.dayCell, isToday && styles.todayCell]} testID={type ? `day-${d}-${type}` : `day-${d}`}>
+                <Pressable key={di} disabled={!canPress} onPress={() => press(ymd)} accessibilityRole={canPress ? 'button' : undefined} accessibilityLabel={canPress ? `${d}日のハンコを押す` : undefined} style={[styles.cell, styles.dayCell, isToday && styles.todayCell]} testID={type ? `day-${d}-${type}` : canPress ? `day-${d}-pending` : `day-${d}`}>
                   <Text variant="caption" size={11} color={isToday ? colors.blue : colors.inkSoft}>{d}</Text>
-                  {type ? <Stamp type={type} size={34} /> : <View style={future ? styles.futureDot : undefined}>{future ? null : <EmptyStamp size={30} />}</View>}
-                </View>
+                  {type ? <Stamp type={type} size={34} /> : canPress ? <PendingStamp size={34} /> : <View style={future ? styles.futureDot : undefined}>{future ? null : <EmptyStamp size={30} />}</View>}
+                </Pressable>
               );
             })}
           </View>
@@ -124,6 +141,7 @@ const styles = StyleSheet.create({
   tiles: { flexDirection: 'row', gap: 10 },
   stat: { flex: 1, padding: 12, gap: 2, borderRadius: radius.lg },
   statHead: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  pending: { paddingVertical: 12 },
   cal: { gap: 6, paddingHorizontal: 8 },
   monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 },
   monthCenter: { alignItems: 'center' },

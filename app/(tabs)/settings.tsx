@@ -76,7 +76,7 @@ export default function SettingsScreen() {
   return (
     <Screen withNav>
       <View style={styles.header}>
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/profile'))} style={styles.back} accessibilityRole="button" accessibilityLabel="もどる" testID="settings-back">
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.navigate('/profile'))} style={styles.back} accessibilityRole="button" accessibilityLabel="もどる" testID="settings-back">
           <Ionicons name="chevron-back" size={22} color={colors.ink} />
         </Pressable>
         <Text variant="title">設定</Text>

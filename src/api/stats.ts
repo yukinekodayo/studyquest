@@ -25,3 +25,6 @@ export async function fetchRecentStamps(fromDate: string): Promise<StampRow[]> {
   if (error) throw error;
   return data;
 }
+
+/** ハンコを押す(date 省略で今日)。サーバーが連続日数から種類を決める */
+export const claimStamp = (date?: string) => rpc('claim_stamp', { p_date: date ?? null });

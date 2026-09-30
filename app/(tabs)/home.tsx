@@ -130,7 +130,7 @@ export default function HomeScreen() {
               ))}
             </View>
             {progress.cleared ? (
-              <Button label="今日のクエスト クリア！ ハンコを見る" icon="ribbon" onPress={() => router.push('/complete')} testID="home-cta-complete" />
+              <Button label={s.today_stamp_claimed ? '今日のクエスト クリア！ ハンコを見る' : 'クリア！ ハンコを押そう'} icon="ribbon" onPress={() => router.push('/complete')} testID="home-cta-complete" />
             ) : next ? (
               <Button
                 label={next.status === 'doing' ? `「${next.title}」をつづける` : `つぎは「${next.title}」を始める`}

@@ -34,7 +34,7 @@ export function ReadyView({ task, onManualDone }: { task: TaskRow; onManualDone:
         <View style={styles.footer}>
           <Button label="タイマーをスタート" icon="play" onPress={() => startTask(task.id, { replace: true })} testID="ready-start" />
           <Button label="タイマーを使わずに完了にする" variant="soft" size="md" onPress={manual} testID="manual-complete" />
-          <Button label="もどる" variant="ghost" size="md" onPress={() => (router.canGoBack() ? router.back() : router.replace('/quest'))} />
+          <Button label="もどる" variant="ghost" size="md" onPress={() => (router.canGoBack() ? router.back() : router.dismissTo('/quest'))} />
         </View>
       }
     >

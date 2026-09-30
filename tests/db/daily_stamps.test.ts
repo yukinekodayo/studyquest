@@ -40,6 +40,10 @@ async function seedStreak(uid: string, lastStreak: number, gapDays = 0): Promise
   );
 }
 
+async function claim(uid: string, date?: string) {
+  return db.as(uid).rpc('claim_stamp', date ?? null);
+}
+
 async function clearToday(uid: string) {
   const t = await addTask(uid, '今日の1個', 10);
   return db.as(uid).rpc('complete_task', t);
@@ -75,8 +79,11 @@ describe('1日の完全達成', () => {
     }
     const last = await db.as(u).rpc('complete_task', ids[3]);
     expect(last.day).toMatchObject({ cleared: true, newly_cleared: true, must_total: 4, must_done: 4, streak: 1, stamp_type: 'normal' });
-    expect(await db.as(u).q('select * from stamps')).toHaveLength(1);
     expect(await db.as(u).q('select * from daily_completions')).toHaveLength(1);
+    // ハンコはユーザーが押すまで作られない
+    expect(await db.as(u).q('select * from stamps')).toHaveLength(0);
+    expect(await claim(u)).toMatchObject({ stamp_type: 'normal', streak: 1, newly_claimed: true });
+    expect(await db.as(u).q('select * from stamps')).toHaveLength(1);
   });
 
   it('同じ日に何度完了/未完了を繰り返してもハンコ・達成・XPは二重にならない', async () => {
@@ -97,6 +104,8 @@ describe('1日の完全達成', () => {
     const b = await addTask(u, 'B');
     const r = await db.as(u).rpc('complete_task', b);
     expect(r.day.newly_cleared).toBe(false);
+    await claim(u);
+    expect((await claim(u)).newly_claimed).toBe(false); // 2回押しても1つだけ
     expect(await db.as(u).q('select * from stamps')).toHaveLength(1);
     const st = await db.as(u).rpc('get_my_stats');
     expect(st).toMatchObject({ total_days: 1, current_streak: 1, longest_streak: 1, cleared_today: true });
@@ -133,6 +142,7 @@ describe('1日の完全達成', () => {
     const u = await db.signup('keep');
     const a = await addTask(u, 'A');
     await db.as(u).rpc('complete_task', a);
+    await claim(u);
     await db.as(u).q('delete from tasks');
     expect(await db.as(u).q('select * from stamps')).toHaveLength(1);
     expect((await db.as(u).rpc('get_my_stats')).total_days).toBe(1);
@@ -176,6 +186,7 @@ describe('連続日数とハンコの境界(サーバー判定)', () => {
     const n = prev + 1;
     const [exp] = await db.admin('select public.stamp_for_streak($1) s', [n]);
     expect(r.day).toMatchObject({ newly_cleared: true, streak: n, stamp_type: exp.s });
+    expect(await claim(u)).toMatchObject({ stamp_type: exp.s, streak: n });
     const stamps = await db.as(u).q('select stamp_type, streak_count from stamps order by earned_date desc limit 1');
     expect(stamps[0]).toMatchObject({ stamp_type: exp.s, streak_count: n });
     const st = await db.as(u).rpc('get_my_stats');
@@ -190,6 +201,7 @@ describe('連続日数とハンコの境界(サーバー判定)', () => {
       const r = await clearToday(u);
       expect(r.day.stamp_type).toBe(type);
       expect(r.day.streak).toBe(Number(n));
+      expect((await claim(u)).stamp_type).toBe(type);
     }
   });
 
@@ -201,6 +213,7 @@ describe('連続日数とハンコの境界(サーバー判定)', () => {
     expect(st).toMatchObject({ current_streak: 0, longest_streak: 8, total_days: 8 });
     const r = await clearToday(u);
     expect(r.day).toMatchObject({ streak: 1, stamp_type: 'normal' });
+    await claim(u);
     st = await db.as(u).rpc('get_my_stats');
     expect(st).toMatchObject({ current_streak: 1, longest_streak: 8, total_days: 9 });
     const stamps = await db.as(u).q('select count(*)::int n, count(*) filter (where stamp_type = \'blue\')::int blue from stamps');
@@ -211,6 +224,7 @@ describe('連続日数とハンコの境界(サーバー判定)', () => {
     const u = await db.signup('keepblue');
     await seedStreak(u, 7, 3);
     await clearToday(u);
+    await claim(u);
     const st = await db.as(u).rpc('get_my_stats');
     expect(st.stamp_counts.blue).toBe(1);
     expect(st.stamp_counts.normal).toBe(7); // 1..6 と今日の1
@@ -232,5 +246,52 @@ describe('連続日数とハンコの境界(サーバー判定)', () => {
     await clearToday(u);
     const st = await db.as(u).rpc('get_my_stats');
     expect(st.month_days).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('ハンコを押す(claim_stamp)', () => {
+  it('達成しても押すまでハンコは無く、押し忘れても連続日数は途切れない', async () => {
+    const u = await db.signup('claim');
+    await clearToday(u);
+    let st = await db.as(u).rpc('get_my_stats');
+    expect(st).toMatchObject({ cleared_today: true, today_stamp_claimed: false, today_stamp_type: 'normal', today_streak: 1 });
+    expect(st.unclaimed_dates).toHaveLength(1);
+    expect(st.stamp_counts).toEqual({});
+    expect(st).toMatchObject({ current_streak: 1, total_days: 1 });
+    await claim(u);
+    st = await db.as(u).rpc('get_my_stats');
+    expect(st).toMatchObject({ today_stamp_claimed: true, unclaimed_dates: [] });
+    expect(st.stamp_counts).toEqual({ normal: 1 });
+  });
+
+  it('達成していない日は押せない(未来日・他人の達成日も不可)', async () => {
+    const u = await db.signup('noclear');
+    const other = await db.signup('other');
+    await addTask(u, 'A');
+    expect(await claim(u).catch((e) => e.message)).toContain('SQ_NOT_CLEARED');
+    await clearToday(other);
+    const [{ d }] = await db.admin('select (public._user_today($1))::text d', [other]);
+    expect(await claim(u, d).catch((e) => e.message)).toContain('SQ_NOT_CLEARED');
+    expect(await claim(u, '2999-01-01').catch((e) => e.message)).toContain('SQ_NOT_CLEARED');
+    expect(await db.as(u).q('select * from stamps')).toHaveLength(0);
+  });
+
+  it('押し忘れた過去の日も、後から押せる(種類はその日の連続日数で決まる)', async () => {
+    const u = await db.signup('late');
+    // 6日連続(=昨日まで)を達成だけして押していない状態にする
+    for (let k = 0; k < 6; k++) {
+      await db.admin(
+        `insert into daily_completions (user_id, completed_date, must_total, streak_count)
+         values ($1, public._user_today($1) - $2::int, 1, $3)`, [u, 1 + k, 6 - k]);
+    }
+    await db.admin(`update user_stats set current_streak = 6, longest_streak = 6, total_days = 6,
+      last_completed_date = public._user_today($1) - 1 where user_id = $1`, [u]);
+    const r = await clearToday(u); // 今日で7日連続
+    expect(r.day).toMatchObject({ streak: 7, stamp_type: 'blue' });
+    expect((await db.as(u).rpc('get_my_stats')).unclaimed_dates).toHaveLength(7);
+    const [{ d }] = await db.admin('select (public._user_today($1) - 6)::text d', [u]);
+    expect(await claim(u, d)).toMatchObject({ stamp_type: 'normal', streak: 1, newly_claimed: true });
+    expect(await claim(u)).toMatchObject({ stamp_type: 'blue', streak: 7 });
+    expect((await db.as(u).rpc('get_my_stats')).unclaimed_dates).toHaveLength(5);
   });
 });

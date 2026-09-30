@@ -21,7 +21,7 @@ export default function QuestDetailScreen() {
   const stats = useStats();
   const [result, setResult] = useState<CompleteTaskResult | null>(null);
 
-  const leave = () => (router.canGoBack() ? router.back() : router.replace('/quest'));
+  const leave = () => (router.canGoBack() ? router.back() : router.dismissTo('/quest'));
 
   if (task.isLoading || tasks.isLoading || session.isLoading) return <Screen scroll={false}><LoadingState /></Screen>;
   if (task.isError || tasks.isError || !tasks.data) {
@@ -31,7 +31,7 @@ export default function QuestDetailScreen() {
     return (
       <Screen scroll={false}>
         <ErrorState message="このタスクは見つからなかったよ。もう消えたのかも" />
-        <Button label="今日のやることへ" variant="soft" onPress={() => router.replace('/quest')} />
+        <Button label="今日のやることへ" variant="soft" onPress={() => router.dismissTo('/quest')} />
       </Screen>
     );
   }

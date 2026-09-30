@@ -45,7 +45,7 @@ export function DoneView({ task, tasks, stats, result }: Props) {
     });
     if (ok) {
       await qc.invalidateQueries();
-      router.replace('/quest');
+      router.dismissTo('/quest');
     }
   };
 
@@ -58,11 +58,11 @@ export function DoneView({ task, tasks, stats, result }: Props) {
           {next ? (
             <Button label={`次のタスクへ：${next.title}（${next.planned_minutes}分）`} icon="chevron-forward" onPress={() => startTask(next.id, { replace: true })} testID="next-task" />
           ) : progress.cleared ? (
-            <Button label="今日のハンコを見る" icon="ribbon" onPress={() => router.replace('/complete')} testID="to-complete" />
+            <Button label={stats?.today_stamp_claimed ? '今日のハンコを見る' : 'ハンコを押そう'} icon="ribbon" onPress={() => router.replace('/complete')} testID="to-complete" />
           ) : (
-            <Button label="今日のやることを見る" onPress={() => router.replace('/quest')} />
+            <Button label="今日のやることを見る" onPress={() => router.dismissTo('/quest')} />
           )}
-          {next || progress.cleared ? <Button label="今日のやることを見る" variant="ghost" size="md" onPress={() => router.replace('/quest')} testID="to-quest" /> : null}
+          {next || progress.cleared ? <Button label="今日のやることを見る" variant="ghost" size="md" onPress={() => router.dismissTo('/quest')} testID="to-quest" /> : null}
         </View>
       }
     >

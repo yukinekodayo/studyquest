@@ -79,7 +79,7 @@ export function TimerView({ task, session, offset, tasks, onFinished, onBack }: 
     const r = await run(() => finishSession(session.id, false));
     if (r) {
       await qc.invalidateQueries();
-      router.replace('/quest');
+      router.dismissTo('/quest');
     }
   };
 

@@ -9,6 +9,7 @@ const SQ_MESSAGES: Record<string, string> = {
   SQ_TASK_ALREADY_DONE: 'このタスクはもう完了しているよ',
   SQ_TASK_DATE_INVALID: '日付が正しくないよ',
   SQ_TASK_LIMIT: '1日に作れるタスクは20個までだよ',
+  SQ_NOT_CLEARED: 'その日はまだクリアしていないから、ハンコは押せないよ',
   SQ_SESSION_NOT_FOUND: 'タイマーが見つからなかったよ',
   SQ_SESSION_FINISHED: 'このタイマーはもう終了しているよ',
   SQ_INVALID_INPUT: '入力内容を確認してね',

@@ -31,7 +31,7 @@ export default function GroupDetailScreen() {
   const [leaving, setLeaving] = useState(false);
   useRefetchOnFocus(detail.refetch);
 
-  const back = () => (router.canGoBack() ? router.back() : router.replace('/groups'));
+  const back = () => (router.canGoBack() ? router.back() : router.navigate('/groups'));
   const backBtn = (
     <Pressable onPress={back} style={styles.back} accessibilityRole="button" accessibilityLabel="もどる" testID="group-back">
       <Ionicons name="chevron-back" size={22} color={colors.ink} />
@@ -66,7 +66,7 @@ export default function GroupDetailScreen() {
     if (ok) {
       setLeaving(false);
       await qc.invalidateQueries();
-      router.replace('/groups');
+      router.navigate('/groups');
     }
   };
 

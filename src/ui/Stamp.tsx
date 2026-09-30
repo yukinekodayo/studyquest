@@ -75,3 +75,13 @@ export function EmptyStamp({ size = 40, label }: { size?: number; label?: string
   );
 }
 
+
+/** 達成したけどまだ押していない日(タップで押せる) */
+export function PendingStamp({ size = 40 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel="ハンコを押せる">
+      <Circle cx={50} cy={50} r={44} fill="#E3ECFC" stroke="#2F6FE0" strokeWidth={4} strokeDasharray="9 7" />
+      <SvgText x={50} y={62} fontSize={34} fontFamily={fonts.display} fill="#2F6FE0" textAnchor="middle">押す</SvgText>
+    </Svg>
+  );
+}

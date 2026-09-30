@@ -1,11 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
+import * as Haptics from 'expo-haptics';
 import { Redirect, useRouter } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Animated, Easing, Share, StyleSheet, View } from 'react-native';
-import { useMonthStamps, useStats, useTodayTasks } from '@/features/hooks';
-import { parseYmd } from '@/domain/dates';
+import { claimStamp } from '@/api/stats';
 import { mustProgress } from '@/domain/quest';
 import { nextBigMilestone, STAMP_META } from '@/domain/stamps';
+import { useStats, useTodayTasks } from '@/features/hooks';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Confetti } from '@/ui/Confetti';
@@ -13,38 +15,45 @@ import { Screen } from '@/ui/Screen';
 import { Stamp } from '@/ui/Stamp';
 import { ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
-import { useToast } from '@/ui/Toast';
+import { useRun, useToast } from '@/ui/Toast';
 import { colors, radius } from '@/ui/theme';
 
-/** 1日の完全達成画面: 今日のクエスト COMPLETE! */
+/** 1日の完全達成画面: 今日のクエスト COMPLETE! → ハンコは自分で押す */
 export default function CompleteScreen() {
   const router = useRouter();
   const toast = useToast();
+  const run = useRun();
+  const qc = useQueryClient();
   const stats = useStats();
   const tasks = useTodayTasks();
-  const today = stats.data?.today;
-  const ym = today ? parseYmd(today) : { y: 1970, m: 1, d: 1 };
-  const stamps = useMonthStamps(ym.y, ym.m);
   const thump = useRef(new Animated.Value(0)).current;
+  const [justPressed, setJustPressed] = useState(false);
 
-  const stamp = stamps.data?.find((s) => s.earned_date === today);
-  useEffect(() => {
-    if (!stamp) return;
-    Animated.timing(thump, { toValue: 1, duration: 520, delay: 250, easing: Easing.out(Easing.back(2)), useNativeDriver: true }).start();
-  }, [stamp, thump]);
-
-  if (stats.isLoading || stamps.isLoading || tasks.isLoading) return <Screen scroll={false}><LoadingState /></Screen>;
-  if (stats.isError || stamps.isError || !stats.data) {
-    return <Screen scroll={false}><ErrorState error={stats.error ?? stamps.error} onRetry={() => { void stats.refetch(); void stamps.refetch(); }} /></Screen>;
+  if (stats.isLoading || tasks.isLoading) return <Screen scroll={false}><LoadingState /></Screen>;
+  if (stats.isError || !stats.data) {
+    return <Screen scroll={false}><ErrorState error={stats.error} onRetry={() => void stats.refetch()} /></Screen>;
   }
+  const s = stats.data;
   // まだクリアしていない(URLを直接開いた等)
-  if (!stats.data.cleared_today || !stamp) return <Redirect href="/quest" />;
+  if (!s.cleared_today || s.today_streak === null || !s.today_stamp_type) return <Redirect href="/quest" />;
 
+  const streak = s.today_streak;
+  const type = s.today_stamp_type;
+  const claimed = s.today_stamp_claimed;
+  const meta = STAMP_META[type];
   const progress = mustProgress(tasks.data ?? []);
-  const meta = STAMP_META[stamp.stamp_type];
-  const streak = stamp.streak_count;
   const week = streak % 7 === 0 ? 7 : streak % 7;
   const next = nextBigMilestone(streak);
+
+  const press = async () => {
+    const r = await run(() => claimStamp());
+    if (!r) return;
+    setJustPressed(true);
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+    thump.setValue(0);
+    Animated.timing(thump, { toValue: 1, duration: 420, easing: Easing.out(Easing.back(2)), useNativeDriver: true }).start();
+    await qc.invalidateQueries();
+  };
 
   const share = async () => {
     try {
@@ -59,13 +68,19 @@ export default function CompleteScreen() {
       contentStyle={styles.content}
       footer={
         <View style={styles.footer}>
-          <Button label="ハンコ帳を見る" icon="star" onPress={() => router.replace('/stamps')} testID="to-stamps" />
-          <Button label="友だちにおしらせする" icon="heart-outline" variant="soft" onPress={share} testID="share" />
-          <Button label="ホームにもどる" variant="ghost" size="md" onPress={() => router.replace('/home')} testID="to-home" />
+          {claimed ? (
+            <>
+              <Button label="ハンコ帳を見る" icon="star" onPress={() => router.dismissTo('/stamps')} testID="to-stamps" />
+              <Button label="友だちにおしらせする" icon="heart-outline" variant="soft" onPress={share} testID="share" />
+            </>
+          ) : (
+            <Button label="ハンコを押す" icon="ribbon" onPress={press} testID="press-stamp" />
+          )}
+          <Button label={claimed ? 'ホームにもどる' : 'あとで押す'} variant="ghost" size="md" onPress={() => router.dismissTo('/home')} testID="to-home" />
         </View>
       }
     >
-      <Confetti />
+      {justPressed ? <Confetti /> : null}
       <View style={styles.head}>
         <View style={styles.allDone}>
           <Ionicons name="checkmark" size={16} color={colors.green} />
@@ -77,12 +92,26 @@ export default function CompleteScreen() {
 
       <Card style={styles.stampCard}>
         <View style={styles.stampBox}>
-          <Animated.View style={{ opacity: thump, transform: [{ scale: thump.interpolate({ inputRange: [0, 1], outputRange: [2.4, 1] }) }, { rotate: thump.interpolate({ inputRange: [0, 1], outputRange: ['-25deg', '-6deg'] }) }] }}>
-            <Stamp type={stamp.stamp_type} size={190} />
-          </Animated.View>
-          <Text variant="heading" size={17} color={meta.color} testID="stamp-earned">
-            {stamp.stamp_type === 'normal' ? '本日のハンコ 獲得！' : `本日のハンコ ＋ ${meta.name}ハンコ獲得！`}
-          </Text>
+          {claimed ? (
+            <>
+              <Animated.View
+                style={justPressed ? { opacity: thump, transform: [{ scale: thump.interpolate({ inputRange: [0, 1], outputRange: [2.4, 1] }) }, { rotate: thump.interpolate({ inputRange: [0, 1], outputRange: ['-25deg', '-6deg'] }) }] } : undefined}
+                testID="stamp-pressed"
+              >
+                <Stamp type={type} size={190} />
+              </Animated.View>
+              <Text variant="heading" size={17} color={meta.color} testID="stamp-earned">
+                {type === 'normal' ? '本日のハンコ 獲得！' : `本日のハンコ ＋ ${meta.name}ハンコ獲得！`}
+              </Text>
+            </>
+          ) : (
+            <>
+              <Stamp type={type} size={190} locked />
+              <Text variant="heading" size={17} color={colors.inkSoft} testID="stamp-pending">
+                {type === 'normal' ? '今日のハンコを押そう！' : `${meta.name}ハンコを押そう！（${streak}日連続）`}
+              </Text>
+            </>
+          )}
         </View>
       </Card>
 
