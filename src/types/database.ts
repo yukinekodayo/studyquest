@@ -87,13 +87,28 @@ export interface CompleteTaskResult {
   xp_gained: number;
   day?: DayResult;
   already_finished?: boolean;
+  level_before?: number;
+  level_after?: number;
+  /** 今回あたらしく解除した実績コード */
+  new_achievements?: string[];
 }
+
+export interface StudySummary {
+  today_minutes: number;
+  days: Array<{ date: string; minutes: number }>;
+  week_minutes: number;
+  prev_week_minutes: number;
+  total_minutes: number;
+}
+
+export type AchievementRow = { user_id: string; code: string; unlocked_at: string };
 
 export interface ClaimStampResult {
   stamp_type: StampType;
   streak: number;
   earned_date: string;
   newly_claimed: boolean;
+  new_achievements?: string[];
 }
 
 export interface MyStats {
@@ -202,6 +217,7 @@ export type Database = {
         Update: Partial<Pick<TaskRow, 'title' | 'planned_minutes' | 'kind'>>;
         Relationships: [];
       };
+      user_achievements: { Row: AchievementRow; Insert: Empty; Update: Empty; Relationships: [] };
       stamps: { Row: StampRow; Insert: Empty; Update: Empty; Relationships: [] };
       daily_completions: { Row: DailyCompletionRow; Insert: Empty; Update: Empty; Relationships: [] };
       friend_requests: { Row: FriendRequestRow; Insert: Empty; Update: Empty; Relationships: [] };
@@ -212,7 +228,7 @@ export type Database = {
       today_tasks: { Args: Empty; Returns: TaskRow[] };
       complete_task: { Args: { p_task_id: string }; Returns: CompleteTaskResult };
       uncomplete_task: { Args: { p_task_id: string }; Returns: undefined };
-      stamp_task: { Args: { p_task_id: string }; Returns: { task_id: string; newly_stamped: boolean } };
+      stamp_task: { Args: { p_task_id: string }; Returns: { task_id: string; newly_stamped: boolean; new_achievements?: string[] } };
       reorder_tasks: { Args: { p_ids: string[] }; Returns: undefined };
       start_session: { Args: { p_task_id: string }; Returns: SessionState };
       pause_session: { Args: { p_session_id: string }; Returns: SessionState };
@@ -221,6 +237,7 @@ export type Database = {
       get_session_state: { Args: { p_task_id: string }; Returns: SessionState | null };
       get_active_session: { Args: Empty; Returns: SessionState | null };
       get_my_stats: { Args: Empty; Returns: MyStats };
+      get_study_summary: { Args: Empty; Returns: StudySummary };
       claim_stamp: { Args: { p_date?: string | null }; Returns: ClaimStampResult };
       send_friend_request: { Args: { p_code: string }; Returns: { result: 'requested' | 'friends' } };
       respond_friend_request: { Args: { p_request_id: string; p_accept: boolean }; Returns: undefined };

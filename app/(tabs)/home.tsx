@@ -4,7 +4,10 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { TaskMark } from '@/features/TaskParts';
 import { useStartTask } from '@/features/actions';
-import { useFriends, useIncomingRequests, useProfile, useReceivedReactions, useRefetchOnFocus, useStats, useTodayTasks } from '@/features/hooks';
+import { useFriends, useIncomingRequests, useProfile, useReceivedReactions, useRefetchOnFocus, useStats, useStudySummary, useTodayTasks } from '@/features/hooks';
+import { WeeklyStudyCard } from '@/features/WeeklyStudyCard';
+import { greetingFor, remainingLabel } from '@/domain/messages';
+import { Flame } from '@/ui/Flame';
 import { NotificationsSheet } from '@/features/NotificationsSheet';
 import { formatJaDate } from '@/domain/dates';
 import { mustProgress, pickNextTask, totalPlannedMinutes } from '@/domain/quest';
@@ -28,6 +31,7 @@ export default function HomeScreen() {
   const tasks = useTodayTasks();
   const profile = useProfile();
   const friends = useFriends();
+  const study = useStudySummary();
   const requests = useIncomingRequests();
   const reactions = useReceivedReactions(stats.data?.today);
   const startTask = useStartTask();
@@ -37,6 +41,7 @@ export default function HomeScreen() {
     void stats.refetch();
     void tasks.refetch();
     void friends.refetch();
+    void study.refetch();
   };
   useRefetchOnFocus(refetchAll);
 
@@ -63,7 +68,7 @@ export default function HomeScreen() {
         <View style={styles.headerRow}>
           <View style={styles.headerText}>
             <Text variant="caption" size={13}>{formatJaDate(s.today)}</Text>
-            <Text variant="title" size={28} testID="greeting" style={styles.greeting}>こんにちは、{nickname}</Text>
+            <Text variant="title" size={28} testID="greeting" style={styles.greeting}>{greetingFor(new Date().getHours())}、{nickname}</Text>
           </View>
           <PressableScale onPress={() => setBell(true)} style={styles.bell} accessibilityRole="button" accessibilityLabel="お知らせ" testID="bell" feedback>
             <Ionicons name="notifications-outline" size={24} color={colors.ink} />
@@ -77,7 +82,7 @@ export default function HomeScreen() {
           <View style={styles.heroTop}>
             <Text variant="bodyBold" color={colors.white} size={15}>今日のクエスト</Text>
             <View style={styles.streak}>
-              <Ionicons name="flame" size={15} color={colors.white} />
+              <Flame size={16} color={colors.white} active={s.current_streak > 0} />
               <Text variant="bodyBold" color={colors.white} size={14} testID="streak-value">{s.current_streak}日連続</Text>
             </View>
           </View>
@@ -93,7 +98,7 @@ export default function HomeScreen() {
                 <Text variant="num" size={60} color={colors.white} testID="progress-text">
                   {progress.done}<Text variant="numMedium" size={26} color="rgba(255,255,255,0.65)"> / {progress.total}</Text>
                 </Text>
-                <Text variant="bodyBold" color={colors.white} size={16} style={styles.heroRemain}>{cleared ? 'ぜんぶ達成' : `あと${progress.remaining}つ`}</Text>
+                <Text variant="bodyBold" color={colors.white} size={16} style={styles.heroRemain}>{remainingLabel(progress.remaining, progress.total)}</Text>
               </View>
               <ProgressSegments total={progress.total} done={progress.done} height={5} doneColor={colors.white} trackColor="rgba(255,255,255,0.28)" />
               <View style={styles.heroBottom}>
@@ -147,7 +152,13 @@ export default function HomeScreen() {
         </FadeIn>
       ) : null}
 
-      <FadeIn index={3}>
+      {study.data ? (
+        <FadeIn index={3}>
+          <WeeklyStudyCard summary={study.data} />
+        </FadeIn>
+      ) : null}
+
+      <FadeIn index={4}>
         <Card>
           <View style={styles.friendsHead}>
             <Text variant="heading" size={17}>友だちのようす</Text>

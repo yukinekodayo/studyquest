@@ -6,7 +6,7 @@ import { fetchFriendsOverview, fetchIncomingRequests, fetchReceivedReactions } f
 import { fetchGroupDetail, fetchMyGroups } from '@/api/groups';
 import { fetchPartyRooms } from '@/api/party';
 import { getSessionState } from '@/api/sessions';
-import { fetchStampsBetween, getMyStats } from '@/api/stats';
+import { fetchAchievements, fetchStampsBetween, getMyStats, getStudySummary } from '@/api/stats';
 import { fetchTask, fetchTodayTasks, reorderTasks } from '@/api/tasks';
 import { clockOffsetMs } from '@/domain/timer';
 import { monthRange } from '@/domain/dates';
@@ -16,6 +16,8 @@ import type { TaskRow } from '@/types/database';
 export const keys = {
   profile: ['profile'] as const,
   stats: ['stats'] as const,
+  study: ['study'] as const,
+  achievements: ['achievements'] as const,
   todayTasks: ['tasks', 'today'] as const,
   task: (id: string) => ['task', id] as const,
   session: (taskId: string) => ['session', taskId] as const,
@@ -43,6 +45,8 @@ export function useUpdateProfile() {
 }
 
 export const useStats = () => useQuery({ queryKey: keys.stats, queryFn: getMyStats });
+export const useStudySummary = () => useQuery({ queryKey: keys.study, queryFn: getStudySummary });
+export const useAchievements = () => useQuery({ queryKey: keys.achievements, queryFn: fetchAchievements });
 export const useTodayTasks = () => useQuery({ queryKey: keys.todayTasks, queryFn: fetchTodayTasks });
 export const useTask = (id: string) => useQuery({ queryKey: keys.task(id), queryFn: () => fetchTask(id), enabled: !!id });
 

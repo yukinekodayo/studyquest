@@ -11,6 +11,7 @@ import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { FadeIn } from '@/ui/FadeIn';
 import { PressableStamp } from '@/ui/PressableStamp';
+import { AchievementBanners } from '@/ui/RewardBanners';
 import { Screen } from '@/ui/Screen';
 import { Stamp } from '@/ui/Stamp';
 import { ErrorState, LoadingState } from '@/ui/States';
@@ -26,6 +27,7 @@ export default function CompleteScreen() {
   const stats = useStats();
   const tasks = useTodayTasks();
   const [pressed, setPressed] = useState(false);
+  const [newAch, setNewAch] = useState<string[]>([]);
 
   if (stats.isLoading || tasks.isLoading) return <Screen scroll={false}><LoadingState /></Screen>;
   if (stats.isError || !stats.data) {
@@ -46,7 +48,8 @@ export default function CompleteScreen() {
 
   const press = async (): Promise<boolean> => {
     try {
-      await claimStamp();
+      const r = await claimStamp();
+      if (r.new_achievements?.length) setNewAch(r.new_achievements);
       // 演出の邪魔にならないよう、少し待ってから最新化
       setTimeout(() => void qc.invalidateQueries(), 900);
       return true;
@@ -118,6 +121,8 @@ export default function CompleteScreen() {
           <Text variant="bodyBold" color={colors.blue} size={14} testID="streak-count">{streak}日連続</Text>
         </View>
       </View>
+
+      <AchievementBanners codes={newAch} />
 
       <FadeIn index={2}>
         <Card style={styles.nextCard}>

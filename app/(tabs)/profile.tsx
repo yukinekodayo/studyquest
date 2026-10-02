@@ -4,7 +4,10 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { DAILY_STAMP_TYPES, STAMP_META } from '@/domain/stamps';
 import { daysInMonth, parseYmd } from '@/domain/dates';
-import { useProfile, useRefetchOnFocus, useStats } from '@/features/hooks';
+import { ACHIEVEMENTS, type AchievementDef } from '@/domain/achievements';
+import { useAchievements, useProfile, useRefetchOnFocus, useStats, useStudySummary } from '@/features/hooks';
+import { WeeklyStudyCard } from '@/features/WeeklyStudyCard';
+import { Flame } from '@/ui/Flame';
 import { Avatar } from '@/ui/Avatar';
 import { Card } from '@/ui/Card';
 import { FadeIn } from '@/ui/FadeIn';
@@ -20,8 +23,11 @@ export default function ProfileScreen() {
   const router = useRouter();
   const profile = useProfile();
   const stats = useStats();
+  const study = useStudySummary();
+  const achievements = useAchievements();
   const [guide, setGuide] = useState(false);
-  useRefetchOnFocus(() => { void stats.refetch(); });
+  const [detail, setDetail] = useState<AchievementDef | null>(null);
+  useRefetchOnFocus(() => { void stats.refetch(); void study.refetch(); void achievements.refetch(); });
 
   if (profile.isLoading || stats.isLoading) return <Screen scroll={false}><LoadingState /></Screen>;
   if (profile.isError || stats.isError || !profile.data || !stats.data) {
@@ -30,6 +36,7 @@ export default function ProfileScreen() {
   const p = profile.data;
   const s = stats.data;
   const t = parseYmd(s.today);
+  const unlocked = new Map((achievements.data ?? []).map((a) => [a.code, a.unlocked_at]));
 
   return (
     <Screen withNav>
@@ -46,7 +53,7 @@ export default function ProfileScreen() {
             <Text variant="title" size={26} testID="profile-name">{p.nickname}</Text>
             <View style={styles.whoRow}>
               <Text variant="bodyBold" size={13} color={colors.inkSoft} testID="level">Lv.{s.level}</Text>
-              <Ionicons name="flame" size={15} color={colors.orange} />
+              <Flame size={16} color={colors.orange} active={s.current_streak > 0} />
               <Text variant="bodyBold" size={13} color={colors.orange}>{s.current_streak}日連続中</Text>
             </View>
           </View>
@@ -102,12 +109,54 @@ export default function ProfileScreen() {
         </Card>
       </FadeIn>
 
-      <FadeIn index={3}>
+      {study.data ? (
+        <FadeIn index={3}>
+          <WeeklyStudyCard summary={study.data} showTotal />
+        </FadeIn>
+      ) : null}
+
+      <FadeIn index={4}>
+        <Card>
+          <View style={styles.collectHead}>
+            <Text variant="heading" size={17}>実績バッジ</Text>
+            <Text variant="caption" testID="ach-count">{unlocked.size} / {ACHIEVEMENTS.length}</Text>
+          </View>
+          <View style={styles.achGrid}>
+            {ACHIEVEMENTS.map((a) => {
+              const on = unlocked.has(a.code);
+              return (
+                <PressableScale key={a.code} onPress={() => setDetail(a)} style={styles.achItem} pressedScale={0.92} accessibilityRole="button" accessibilityLabel={`${a.name}${on ? '(獲得ずみ)' : '(まだ)'}`} testID={`ach-${a.code}${on ? '-on' : ''}`} feedback>
+                  <View style={[styles.achBadge, on && styles.achBadgeOn]}>
+                    <Ionicons name={on ? a.icon : 'lock-closed'} size={on ? 24 : 18} color={on ? colors.white : colors.inkFaint} />
+                  </View>
+                  <Text variant={on ? 'bodyBold' : 'caption'} size={11} color={on ? colors.ink : colors.inkFaint} align="center" numberOfLines={2}>{a.name}</Text>
+                </PressableScale>
+              );
+            })}
+          </View>
+        </Card>
+      </FadeIn>
+
+      <FadeIn index={5}>
         <View>
           <MenuRow icon="create-outline" label="プロフィールの編集" onPress={() => router.push('/settings')} />
           <MenuRow icon="help-circle-outline" label="使い方ガイド" onPress={() => setGuide(true)} />
         </View>
       </FadeIn>
+
+      <Sheet visible={!!detail} title={detail?.name ?? ''} onClose={() => setDetail(null)}>
+        {detail ? (
+          <View style={styles.achDetail}>
+            <View style={[styles.achBadge, styles.achBig, unlocked.has(detail.code) && styles.achBadgeOn]}>
+              <Ionicons name={unlocked.has(detail.code) ? detail.icon : 'lock-closed'} size={34} color={unlocked.has(detail.code) ? colors.white : colors.inkFaint} />
+            </View>
+            <Text variant="body" align="center">{detail.description}</Text>
+            <Text variant="caption" align="center">
+              {unlocked.has(detail.code) ? `獲得した日：${(unlocked.get(detail.code) ?? '').slice(0, 10).replace(/-/g, '/')}` : 'まだ獲得していません。続けていると、きっと手に入ります'}
+            </Text>
+          </View>
+        ) : null}
+      </Sheet>
 
       <Sheet visible={guide} title="使い方ガイド" onClose={() => setGuide(false)}>
         {['1. 「クエスト」で、今日やることを自分で決めて追加します', '2. 「開始」を押すとタイマーがスタート。終わったら「終了」', '3. 「絶対やる」をぜんぶ終えたら、ハンコをタップして押します', '4. 毎日続けると、青・緑・金・特別ハンコが手に入ります', '5. 友だちを追加すると、おたがいの進み具合が見えます。1日休んでも、集めたハンコは消えません'].map((x) => (
@@ -144,6 +193,12 @@ const styles = StyleSheet.create({
   collectHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   collectRow: { flexDirection: 'row', justifyContent: 'space-between' },
   collectItem: { flex: 1, alignItems: 'center', gap: 3 },
+  achGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14 },
+  achItem: { width: '25%', alignItems: 'center', gap: 5, paddingHorizontal: 2 },
+  achBadge: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.beige, alignItems: 'center', justifyContent: 'center' },
+  achBadgeOn: { backgroundColor: colors.blue },
+  achBig: { width: 80, height: 80, borderRadius: 40 },
+  achDetail: { alignItems: 'center', gap: 12, paddingVertical: 8 },
   menu: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 58, borderBottomWidth: 1, borderBottomColor: colors.line },
   menuLabel: { flex: 1 },
 });

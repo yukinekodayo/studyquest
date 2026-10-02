@@ -10,7 +10,7 @@ const { page } = u;
 console.log('1. 新規登録');
 await signup(page, { nickname: 'ゆうき', avatar: 'blue', email });
 await tid(page, 'greeting').waitFor();
-check(norm(await tid(page, 'greeting').textContent()) === 'こんにちは、ゆうき', 'ホームに「こんにちは、ゆうき」');
+check(/^(おはよう|こんにちは|こんばんは)、ゆうき$/.test(norm(await tid(page, 'greeting').textContent())), 'ホームに時間帯のあいさつ+ニックネーム');
 await shot(page, '01-home-empty');
 
 console.log('2. 今日の計画を作る');
@@ -89,6 +89,9 @@ await tid(page, 'timer-finish').click();
 await tid(page, 'done-title').waitFor({ timeout: 15000 });
 check(norm(await tid(page, 'done-title').textContent()).includes('完了'), '「◯◯ 完了！」表示');
 check(norm(await tid(page, 'done-progress').textContent()) === '1 / 4', '進捗 1 / 4');
+// 続けたくなる仕掛け: 一言の声かけ + 実績バッジの獲得演出
+check((await tid(page, 'combo-message').count()) === 1, 'タスクを終えたときの一言(流れに乗せる声かけ)');
+check((await tid(page, 'new-achievement-first_task').count()) === 1, '実績「はじめの一歩」を獲得した演出');
 // タスクの「済」ハンコも自動では押されない。自分でタップして押す
 check((await tid(page, 'stamp-pressed').count()) === 0, 'タイマーを終えても「済」は自動では押されない');
 check(norm(await tid(page, 'stamp-pending').textContent()).includes('押す'), '「タップして「済」を押す」の案内');
@@ -184,9 +187,25 @@ for (const path of ['home', 'quest', 'friends', 'stamps', 'profile', 'groups', '
   check(n <= 8, `/${path}: アイドル5秒間のAPI呼び出し ${n} 回(ポーリングのみ)`);
 }
 
+console.log('11.8 ホームに「今週の学習」');
+await page.goto(`${BASE}/home`, { waitUntil: 'domcontentloaded' });
+await page.locator('[data-testid="weekly-study"]').first().waitFor({ timeout: 20000 });
+check(true, 'ホームに「今週の学習」カード');
+await shot(page, '11-home-weekly');
+
 console.log('12. マイページ');
 await tid(page, 'nav-profile').click();
 await tid(page, 'profile-name').waitFor();
+const weekly = page.locator('[data-testid="weekly-study"]', { hasText: 'これまでの合計' });
+await weekly.waitFor({ timeout: 15000 });
+check((await weekly.locator('[data-testid="week-total"]').count()) === 1, 'マイページに「今週の学習」(7日の棒グラフ)');
+check(norm(await tid(page, 'ach-count').textContent()).endsWith('/ 21'), '実績バッジの一覧(全21種)');
+check((await tid(page, 'ach-first_task-on').count()) === 1, '獲得した実績が色つきで表示される');
+await tid(page, 'ach-first_task-on').click();
+await page.getByText('獲得した日').waitFor({ timeout: 8000 });
+check(true, '実績をタップすると、説明と獲得日が見える');
+await tid(page, 'sheet-close').click();
+await shot(page, '12-profile-achievements');
 check(norm(await tid(page, 'profile-name').textContent()) === 'ゆうき', 'ニックネーム表示');
 await shot(page, '11-profile');
 

@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { rpc } from './rpc';
-import type { StampRow } from '@/types/database';
+import type { AchievementRow, StampRow } from '@/types/database';
 
 export const getMyStats = () => rpc('get_my_stats');
 
@@ -28,3 +28,11 @@ export async function fetchRecentStamps(fromDate: string): Promise<StampRow[]> {
 
 /** ハンコを押す(date 省略で今日)。サーバーが連続日数から種類を決める */
 export const claimStamp = (date?: string) => rpc('claim_stamp', { p_date: date ?? null });
+
+export const getStudySummary = () => rpc('get_study_summary');
+
+export async function fetchAchievements(): Promise<AchievementRow[]> {
+  const { data, error } = await supabase.from('user_achievements').select('*').order('unlocked_at');
+  if (error) throw error;
+  return data;
+}
