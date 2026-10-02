@@ -60,6 +60,8 @@ cp .env.example .env    # EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_K
 2. `.env` に Project URL と **anon key**(service_role キーは絶対に入れない)を設定。
 3. Auth > メール認証。本番で「メール確認」を有効にする場合、登録画面は「確認メールを送ったよ」を表示する。
 
+> スマホ(Expo Go)で試すだけなら、[docs/PHONE.md](docs/PHONE.md) の手順が最短です(`supabase/setup_all.sql` を貼り付けるだけで DB が整います。`npm run setup-sql` で再生成)。
+
 ### 起動
 
 ```bash
