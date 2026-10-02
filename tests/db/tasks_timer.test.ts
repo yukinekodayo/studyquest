@@ -18,10 +18,10 @@ async function addTask(uid: string, title: string, minutes = 20, kind = 'must'):
 
 describe('サインアップ/プロフィール', () => {
   it('プロフィールとstatsが作られ、フレンドコードは8文字', async () => {
-    const u = await db.signup('ゆうき', { avatar: 'frog' });
+    const u = await db.signup('ゆうき', { avatar: 'green' });
     const [p] = await db.admin('select * from profiles where id = $1', [u]);
     expect(p.nickname).toBe('ゆうき');
-    expect(p.avatar).toBe('frog');
+    expect(p.avatar).toBe('green');
     expect(p.friend_code).toMatch(/^[A-Z2-9]{8}$/);
     const [s] = await db.admin('select * from user_stats where user_id = $1', [u]);
     expect(s.xp).toBe(0);
@@ -31,7 +31,7 @@ describe('サインアップ/プロフィール', () => {
     const u = await db.signup('あ'.repeat(30), { avatar: 'dragon', timezone: 'Mars/Base' });
     const [p] = await db.admin('select * from profiles where id = $1', [u]);
     expect(p.nickname).toBe('ゲスト');
-    expect(p.avatar).toBe('cat');
+    expect(p.avatar).toBe('blue');
     expect(p.timezone).toBe('Asia/Tokyo');
   });
 });

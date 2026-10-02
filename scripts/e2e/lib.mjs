@@ -30,7 +30,7 @@ export async function shot(page, name) {
   await page.screenshot({ path: `${SHOTS}/${name}.png` });
 }
 
-export async function signup(page, { nickname, avatar = 'cat', email, password = 'password123' }) {
+export async function signup(page, { nickname, avatar = 'blue', email, password = 'password123' }) {
   await page.goto(`${BASE}/signup`, { waitUntil: 'domcontentloaded' });
   await tid(page, `avatar-${avatar}`).click();
   await tid(page, 'signup-nickname').fill(nickname);

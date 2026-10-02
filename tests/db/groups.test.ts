@@ -163,3 +163,20 @@ describe('アカウント削除', () => {
     expect(await db.admin('select id from profiles where id = $1', [b])).toHaveLength(1);
   });
 });
+
+describe('アイコンの色(avatar)', () => {
+  it('既存の動物アイコンは色に移行され、新しい値だけが許可される', async () => {
+    const db2 = await createTestDb();
+    try {
+      const u = await db2.signup('x', { avatar: 'violet' });
+      expect((await db2.admin('select avatar from profiles where id = $1', [u]))[0].avatar).toBe('violet');
+      const bad = await errorOf(db2.as(u).q("update profiles set avatar = 'fox' where id = $1", [u]));
+      expect(bad).toMatch(/check|violates/);
+      // 旧値('cat')でサインアップしても安全に既定色へ
+      const u2 = await db2.signup('y', { avatar: 'cat' });
+      expect((await db2.admin('select avatar from profiles where id = $1', [u2]))[0].avatar).toBe('blue');
+    } finally {
+      await db2.close();
+    }
+  });
+});

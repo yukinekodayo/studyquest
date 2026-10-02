@@ -1,16 +1,43 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { ReactNode } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { Animated, Easing, StyleSheet, View, type DimensionValue, type StyleProp, type ViewStyle } from 'react-native';
 import { toUserMessage } from '@/domain/errors';
 import { Button } from './Button';
 import { Text } from './Text';
-import { colors } from './theme';
+import { colors, radius } from './theme';
 
-export function LoadingState({ label = 'よみこみ中…' }: { label?: string }) {
+/** 読み込み中の骨組み(ふわっと明滅)。スピナーより「すぐ出る」感じになる */
+export function Skeleton({ width = '100%', height = 16, style }: { width?: DimensionValue; height?: number; style?: StyleProp<ViewStyle> }) {
+  const o = useRef(new Animated.Value(0.5)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(o, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(o, { toValue: 0.5, duration: 700, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [o]);
+  return <Animated.View style={[{ width, height, borderRadius: 8, backgroundColor: colors.track, opacity: o }, style]} />;
+}
+
+/** 画面全体の読み込み表示(カード型の骨組み) */
+export function LoadingState({ label = 'よみこみ中' }: { label?: string }) {
   return (
-    <View style={styles.center} accessibilityRole="progressbar" accessibilityLabel={label}>
-      <ActivityIndicator color={colors.blue} size="large" />
-      <Text variant="caption">{label}</Text>
+    <View style={styles.skel} accessibilityRole="progressbar" accessibilityLabel={label}>
+      <Skeleton height={34} width="60%" />
+      <View style={styles.card}>
+        <Skeleton height={14} width="35%" />
+        <Skeleton height={44} width="30%" />
+        <Skeleton height={6} />
+      </View>
+      <View style={styles.card}>
+        <Skeleton height={18} width="40%" />
+        <Skeleton height={44} />
+        <Skeleton height={44} />
+        <Skeleton height={44} />
+      </View>
     </View>
   );
 }
@@ -28,7 +55,7 @@ export function ErrorState({ error, onRetry, message }: { error?: unknown; onRet
 export function EmptyState({ title, body, action }: { title: string; body?: string; action?: ReactNode }) {
   return (
     <View style={styles.center}>
-      <Text variant="heading" align="center">{title}</Text>
+      <Text variant="title" size={20} align="center">{title}</Text>
       {body ? <Text variant="body" color={colors.inkSoft} align="center">{body}</Text> : null}
       {action}
     </View>
@@ -36,5 +63,7 @@ export function EmptyState({ title, body, action }: { title: string; body?: stri
 }
 
 const styles = StyleSheet.create({
+  skel: { gap: 16, paddingTop: 8 },
+  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: 18, gap: 14 },
   center: { alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 36, paddingHorizontal: 24 },
 });

@@ -1,14 +1,14 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { uncompleteTask } from '@/api/tasks';
 import { mustProgress, pickNextTask } from '@/domain/quest';
 import { STAMP_META, stampForStreak, streakIfClearedToday } from '@/domain/stamps';
+import { haptic } from '@/lib/haptics';
 import type { CompleteTaskResult, MyStats, TaskRow } from '@/types/database';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
-import { Confetti } from '@/ui/Confetti';
 import { Screen } from '@/ui/Screen';
 import { Stamp } from '@/ui/Stamp';
 import { Text } from '@/ui/Text';
@@ -24,7 +24,7 @@ interface Props {
   result: CompleteTaskResult | null;
 }
 
-/** 「数学 完了！」画面。次のタスクへワンタップで進める */
+/** 「数学 完了」画面。済ハンコが落ちてきて、XPが増え、次のタスクへワンタップで進める */
 export function DoneView({ task, tasks, stats, result }: Props) {
   const router = useRouter();
   const run = useRun();
@@ -37,6 +37,23 @@ export function DoneView({ task, tasks, stats, result }: Props) {
   const rewardStreak = streakIfClearedToday(stats?.current_streak ?? 0);
   const rewardStamp = stampForStreak(rewardStreak);
   const fresh = !!result;
+
+  // 済ハンコが落ちてくる(完了した直後だけ)
+  const drop = useRef(new Animated.Value(fresh ? 0 : 1)).current;
+  const xpAnim = useRef(new Animated.Value(fresh ? 0 : 1)).current;
+  const [shownXp, setShownXp] = useState(fresh ? 0 : xp);
+  useEffect(() => {
+    if (!fresh) return;
+    Animated.timing(drop, { toValue: 1, duration: 260, delay: 120, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(({ finished }) => {
+      if (finished) void haptic.stamp();
+    });
+    const id = xpAnim.addListener(({ value }) => setShownXp(Math.round(value * xp)));
+    Animated.timing(xpAnim, { toValue: 1, duration: 900, delay: 450, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+    return () => xpAnim.removeListener(id);
+  }, [fresh, drop, xpAnim, xp]);
+
+  const levelFrom = stats ? Math.max(0, (stats.xp_in_level - xp) / stats.xp_per_level) : 0;
+  const levelTo = stats ? stats.xp_in_level / stats.xp_per_level : 0;
 
   const undo = async () => {
     const ok = await run(async () => {
@@ -51,7 +68,6 @@ export function DoneView({ task, tasks, stats, result }: Props) {
 
   return (
     <Screen
-      scroll
       contentStyle={styles.content}
       footer={
         <View style={styles.footer}>
@@ -66,21 +82,23 @@ export function DoneView({ task, tasks, stats, result }: Props) {
         </View>
       }
     >
-      {fresh ? <Confetti /> : null}
       <View style={styles.hero}>
-        <View style={styles.bigCheck}><Ionicons name="checkmark" size={56} color={colors.white} /></View>
-        <Text variant="display" testID="done-title">{task.title} 完了！</Text>
-        <Text variant="body" color={colors.inkSoft}>{task.planned_minutes}分の集中、おつかれさま</Text>
+        <Animated.View style={{ opacity: drop.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] }), transform: [{ scale: drop.interpolate({ inputRange: [0, 1], outputRange: [1.7, 1] }) }, { rotate: drop.interpolate({ inputRange: [0, 1], outputRange: ['-12deg', '-3deg'] }) }] }}>
+          <Stamp type="normal" size={150} />
+        </Animated.View>
+        <Text variant="display" size={30} testID="done-title" style={styles.doneTitle}>{task.title}　完了</Text>
+        <Text variant="body" color={colors.inkSoft}>{task.planned_minutes}分の学習を記録しました</Text>
         <View style={styles.xpRow}>
-          <Ionicons name="star" size={20} color={colors.orange} />
-          <Text variant="num" size={24} color="#B7791F" testID="xp-gained">+{xp} XP</Text>
+          <Text variant="num" size={26} color={colors.blue} testID="xp-gained">+{shownXp}<Text variant="bodyBold" size={14} color={colors.blue}> XP</Text></Text>
           {stats ? (
             <View style={styles.levelWrap}>
               <View style={styles.levelLabels}>
                 <Text variant="caption" size={11}>Lv.{stats.level}</Text>
                 <Text variant="caption" size={11}>{stats.xp_in_level} / {stats.xp_per_level}</Text>
               </View>
-              <View style={styles.levelTrack}><View style={[styles.levelFill, { width: `${Math.min(100, (stats.xp_in_level / stats.xp_per_level) * 100)}%` }]} /></View>
+              <View style={styles.levelTrack}>
+                <Animated.View style={[styles.levelFill, { width: xpAnim.interpolate({ inputRange: [0, 1], outputRange: [`${levelFrom * 100}%`, `${Math.min(100, levelTo * 100)}%`] }) }]} />
+              </View>
             </View>
           ) : null}
         </View>
@@ -90,38 +108,37 @@ export function DoneView({ task, tasks, stats, result }: Props) {
         <Card style={styles.progressCard}>
           <View style={styles.progressHead}>
             <Text variant="heading" size={16}>今日の進捗</Text>
-            <Text variant="num" size={30} color={colors.blue} testID="done-progress">{progress.done}<Text variant="bodyBold" size={15} color={colors.inkSoft}> / {progress.total}</Text></Text>
+            <Text variant="num" size={30} color={colors.blue} testID="done-progress">{progress.done}<Text variant="numMedium" size={16} color={colors.inkSoft}> / {progress.total}</Text></Text>
           </View>
           <View style={styles.stampRow}>
             {must.map((t) => (
               <View key={t.id} style={styles.stampCol}>
-                <TaskMark task={t} size={44} />
+                <TaskMark task={t} size={46} showInitial />
                 <Text variant="caption" size={11} numberOfLines={1} color={t.status === 'done' ? colors.ink : colors.inkFaint}>{t.title}</Text>
               </View>
             ))}
           </View>
-          {!progress.cleared && stats?.cleared_today ? (
-            <View style={styles.tease}>
-              <Ionicons name="ribbon" size={26} color={colors.red} />
-              <Text variant="bodyBold" size={14} style={styles.grow}>今日のクエストはもうクリアずみだよ</Text>
-            </View>
-          ) : !progress.cleared ? (
-            <View style={styles.tease}>
-              <Stamp type={rewardStamp} size={36} />
-              <Text variant="bodyBold" size={14} style={styles.grow}>
-                あと{progress.remaining}つで、今日のハンコがもらえる！
-                {rewardStamp !== 'normal' ? `（${STAMP_META[rewardStamp].name}ハンコ）` : ''}
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.tease}>
-              <Ionicons name="ribbon" size={26} color={colors.red} />
-              <Text variant="bodyBold" size={14} style={styles.grow}>今日のクエスト、ぜんぶクリア！</Text>
-            </View>
-          )}
+          <View style={styles.tease}>
+            {!progress.cleared && stats?.cleared_today ? (
+              <Text variant="bodyBold" size={14} style={styles.grow}>今日のクエストはもうクリアずみです</Text>
+            ) : !progress.cleared ? (
+              <>
+                <Stamp type={rewardStamp} size={34} />
+                <Text variant="bodyBold" size={14} style={styles.grow}>
+                  あと{progress.remaining}つで、今日のハンコがもらえます
+                  {rewardStamp !== 'normal' ? `（${STAMP_META[rewardStamp].name}ハンコ）` : ''}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Stamp type="normal" size={34} />
+                <Text variant="bodyBold" size={14} style={styles.grow}>今日のクエスト、ぜんぶクリアしました</Text>
+              </>
+            )}
+          </View>
         </Card>
       ) : (
-        <Card tone="blue"><Text variant="bodyBold" align="center">ボーナスもクリア！XPをゲットしたよ</Text></Card>
+        <Card tone="blue"><Text variant="bodyBold" align="center">ボーナスもクリア。XPを獲得しました</Text></Card>
       )}
 
       <Button label="未完了にもどす" variant="ghost" size="sm" onPress={undo} testID="undo-done" />
@@ -130,19 +147,19 @@ export function DoneView({ task, tasks, stats, result }: Props) {
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 16 },
-  hero: { alignItems: 'center', gap: 6, paddingTop: 24 },
-  bigCheck: { width: 108, height: 108, borderRadius: 54, backgroundColor: colors.green, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 6, borderBottomColor: '#1F7A44', marginBottom: 14 },
-  xpRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  levelWrap: { width: 130, marginLeft: 8, gap: 2 },
+  content: { gap: 18 },
+  hero: { alignItems: 'center', gap: 8, paddingTop: 20 },
+  doneTitle: { marginTop: 10 },
+  xpRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 8 },
+  levelWrap: { width: 150, gap: 3 },
   levelLabels: { flexDirection: 'row', justifyContent: 'space-between' },
-  levelTrack: { height: 8, borderRadius: 4, backgroundColor: '#EFE7D2', overflow: 'hidden' },
-  levelFill: { height: 8, borderRadius: 4, backgroundColor: colors.orange },
-  progressCard: { gap: 14, borderRadius: radius.xl },
+  levelTrack: { height: 6, borderRadius: 3, backgroundColor: colors.track, overflow: 'hidden' },
+  levelFill: { height: 6, borderRadius: 3, backgroundColor: colors.blue },
+  progressCard: { gap: 16, borderRadius: radius.lg },
   progressHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   stampRow: { flexDirection: 'row', justifyContent: 'space-around', gap: 8 },
-  stampCol: { alignItems: 'center', gap: 4, flex: 1 },
-  tease: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.yellowSoft, borderWidth: 2, borderStyle: 'dashed', borderColor: colors.yellowBorder, borderRadius: radius.md, padding: 10 },
+  stampCol: { alignItems: 'center', gap: 6, flex: 1 },
+  tease: { flexDirection: 'row', alignItems: 'center', gap: 12, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 14 },
   grow: { flex: 1 },
   footer: { gap: 4 },
 });

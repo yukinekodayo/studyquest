@@ -1,5 +1,6 @@
-import { DelaGothicOne_400Regular } from '@expo-google-fonts/dela-gothic-one';
-import { ZenMaruGothic_500Medium, ZenMaruGothic_700Bold, ZenMaruGothic_900Black } from '@expo-google-fonts/zen-maru-gothic';
+import { DMSans_500Medium, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
+import { NotoSansJP_500Medium, NotoSansJP_700Bold } from '@expo-google-fonts/noto-sans-jp';
+import { ShipporiMincho_500Medium, ShipporiMincho_700Bold } from '@expo-google-fonts/shippori-mincho';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -19,10 +20,12 @@ void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    DelaGothicOne_400Regular,
-    ZenMaruGothic_500Medium,
-    ZenMaruGothic_700Bold,
-    ZenMaruGothic_900Black,
+    ShipporiMincho_500Medium,
+    ShipporiMincho_700Bold,
+    NotoSansJP_500Medium,
+    NotoSansJP_700Bold,
+    DMSans_500Medium,
+    DMSans_700Bold,
   });
   const ready = fontsLoaded || !!fontError;
 
@@ -36,7 +39,7 @@ export default function RootLayout() {
     return (
       <SafeAreaProvider>
         <Screen scroll={false}>
-          <ErrorState message="アプリの設定がまだ終わっていないよ(EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY)" />
+          <ErrorState message="アプリの設定がまだ終わっていません(EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY)" />
         </Screen>
       </SafeAreaProvider>
     );

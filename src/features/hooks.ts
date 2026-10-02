@@ -59,7 +59,8 @@ export function useTaskSession(taskId: string) {
       return { session, offset };
     },
     enabled: !!taskId,
-    staleTime: 0,
+    // 開始直後の仮データを、取得し直しで消さないよう少しだけ新鮮扱いにする
+    staleTime: 3_000,
   });
 }
 
@@ -86,6 +87,19 @@ export const useGroupDetail = (id: string) =>
 export function useMonthStamps(y: number, m: number) {
   const { from, to } = monthRange(y, m);
   return useQuery({ queryKey: keys.stamps(y, m), queryFn: () => fetchStampsBetween(from, to) });
+}
+
+/** よく開く画面のデータを先に読んでおく(最初のタブ移動を速くする) */
+export function usePrefetchTabs() {
+  const qc = useQueryClient();
+  const { userId } = useAuth();
+  useEffect(() => {
+    if (!userId) return;
+    void qc.prefetchQuery({ queryKey: keys.stats, queryFn: getMyStats });
+    void qc.prefetchQuery({ queryKey: keys.todayTasks, queryFn: fetchTodayTasks });
+    void qc.prefetchQuery({ queryKey: keys.friends, queryFn: fetchFriendsOverview });
+    void qc.prefetchQuery({ queryKey: keys.party, queryFn: fetchPartyRooms });
+  }, [qc, userId]);
 }
 
 /** ゲーム状態(タスク・統計・友だち・グループ)を全部取り直す */

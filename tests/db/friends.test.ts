@@ -121,8 +121,8 @@ describe('友だちデータのアクセス制御(RLS)', () => {
     const b = await db.signup('b');
     await makeFriends(a, b);
     expect(await db.as(b).q("update profiles set nickname = 'hack' where id = $1 returning id", [a])).toHaveLength(0);
-    await db.as(a).q("update profiles set nickname = 'あたらしい', avatar = 'fox' where id = $1", [a]);
-    expect((await db.admin('select nickname, avatar from profiles where id = $1', [a]))[0]).toEqual({ nickname: 'あたらしい', avatar: 'fox' });
+    await db.as(a).q("update profiles set nickname = 'あたらしい', avatar = 'teal' where id = $1", [a]);
+    expect((await db.admin('select nickname, avatar from profiles where id = $1', [a]))[0]).toEqual({ nickname: 'あたらしい', avatar: 'teal' });
     expect(await errorOf(db.as(a).q("update profiles set nickname = '' where id = $1", [a]))).toMatch(/check|violates/);
     expect(await errorOf(db.as(a).q("update profiles set avatar = 'dragon' where id = $1", [a]))).toMatch(/check|violates/);
   });

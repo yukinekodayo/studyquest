@@ -1,6 +1,6 @@
 import { Tabs, useRouter } from 'expo-router';
 import { BottomNav, type NavKey } from '@/ui/BottomNav';
-import { useIncomingRequests, useMyGroups } from '@/features/hooks';
+import { useIncomingRequests, useMyGroups, usePrefetchTabs } from '@/features/hooks';
 
 /** タブ名 → 下部ナビでハイライトする項目 */
 const NAV_OF: Record<string, NavKey> = {
@@ -25,6 +25,7 @@ const HREF_OF: Record<NavKey, string> = {
 
 export default function TabsLayout() {
   const router = useRouter();
+  usePrefetchTabs();
   const requests = useIncomingRequests();
   const groups = useMyGroups();
   const badge = {

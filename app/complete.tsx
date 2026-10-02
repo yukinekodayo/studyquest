@@ -1,33 +1,31 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import * as Haptics from 'expo-haptics';
 import { Redirect, useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
-import { Animated, Easing, Share, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Share, StyleSheet, View } from 'react-native';
 import { claimStamp } from '@/api/stats';
 import { mustProgress } from '@/domain/quest';
 import { nextBigMilestone, STAMP_META } from '@/domain/stamps';
 import { useStats, useTodayTasks } from '@/features/hooks';
+import { haptic } from '@/lib/haptics';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
-import { Confetti } from '@/ui/Confetti';
+import { FadeIn } from '@/ui/FadeIn';
+import { PressableStamp } from '@/ui/PressableStamp';
 import { Screen } from '@/ui/Screen';
 import { Stamp } from '@/ui/Stamp';
 import { ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
-import { useRun, useToast } from '@/ui/Toast';
-import { colors, radius } from '@/ui/theme';
+import { useToast } from '@/ui/Toast';
+import { colors } from '@/ui/theme';
 
-/** 1日の完全達成画面: 今日のクエスト COMPLETE! → ハンコは自分で押す */
+/** 1日の完全達成画面: ハンコは自分でタップして押す(押した瞬間に強い振動) */
 export default function CompleteScreen() {
   const router = useRouter();
   const toast = useToast();
-  const run = useRun();
   const qc = useQueryClient();
   const stats = useStats();
   const tasks = useTodayTasks();
-  const thump = useRef(new Animated.Value(0)).current;
-  const [justPressed, setJustPressed] = useState(false);
+  const [pressed, setPressed] = useState(false);
 
   if (stats.isLoading || tasks.isLoading) return <Screen scroll={false}><LoadingState /></Screen>;
   if (stats.isError || !stats.data) {
@@ -44,22 +42,26 @@ export default function CompleteScreen() {
   const progress = mustProgress(tasks.data ?? []);
   const week = streak % 7 === 0 ? 7 : streak % 7;
   const next = nextBigMilestone(streak);
+  const total = progress.total || s.today_streak;
 
-  const press = async () => {
-    const r = await run(() => claimStamp());
-    if (!r) return;
-    setJustPressed(true);
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-    thump.setValue(0);
-    Animated.timing(thump, { toValue: 1, duration: 420, easing: Easing.out(Easing.back(2)), useNativeDriver: true }).start();
-    await qc.invalidateQueries();
+  const press = async (): Promise<boolean> => {
+    try {
+      await claimStamp();
+      // 演出の邪魔にならないよう、少し待ってから最新化
+      setTimeout(() => void qc.invalidateQueries(), 900);
+      return true;
+    } catch (e) {
+      haptic.error();
+      toast.showError(e);
+      return false;
+    }
   };
 
   const share = async () => {
     try {
-      await Share.share({ message: `StudyQuestで今日のクエストをクリアしたよ！ 🔥${streak}日連続` });
+      await Share.share({ message: `StudyQuestで今日のクエストをクリアしました。${streak}日連続です` });
     } catch {
-      toast.show('共有できなかったよ', 'error');
+      toast.show('共有できませんでした', 'error');
     }
   };
 
@@ -70,91 +72,82 @@ export default function CompleteScreen() {
         <View style={styles.footer}>
           {claimed ? (
             <>
-              <Button label="ハンコ帳を見る" icon="star" onPress={() => router.dismissTo('/stamps')} testID="to-stamps" />
-              <Button label="友だちにおしらせする" icon="heart-outline" variant="soft" onPress={share} testID="share" />
+              <Button label="ハンコ帳を見る" onPress={() => router.dismissTo('/stamps')} testID="to-stamps" />
+              <Button label="友だちに知らせる" icon="share-outline" variant="soft" onPress={share} testID="share" />
+              <Button label="ホームにもどる" variant="ghost" size="md" onPress={() => router.dismissTo('/home')} testID="to-home" />
             </>
           ) : (
-            <Button label="ハンコを押す" icon="ribbon" onPress={press} testID="press-stamp" />
+            <Button label="あとで押す" variant="ghost" size="md" onPress={() => router.dismissTo('/home')} testID="to-home" />
           )}
-          <Button label={claimed ? 'ホームにもどる' : 'あとで押す'} variant="ghost" size="md" onPress={() => router.dismissTo('/home')} testID="to-home" />
         </View>
       }
     >
-      {justPressed ? <Confetti /> : null}
-      <View style={styles.head}>
-        <View style={styles.allDone}>
-          <Ionicons name="checkmark" size={16} color={colors.green} />
-          <Text variant="bodyBold" size={14} color={colors.green} testID="all-done">{progress.done} / {progress.total} ぜんぶ達成</Text>
+      <FadeIn index={0}>
+        <View style={styles.head}>
+          <Text variant="label" color={colors.blue} style={styles.eyebrow} testID="all-done">TODAY COMPLETE</Text>
+          <Text variant="display" size={30} align="center">今日のクエスト、クリア</Text>
+          <Text variant="caption" size={13} align="center">{total}つのタスクをぜんぶ達成しました</Text>
         </View>
-        <Text variant="display" size={38} color={colors.blue} style={styles.big}>TODAY{'\n'}COMPLETE!</Text>
-        <Text variant="title" size={20}>今日のクエスト クリア！</Text>
-      </View>
+      </FadeIn>
 
-      <Card style={styles.stampCard}>
-        <View style={styles.stampBox}>
-          {claimed ? (
-            <>
-              <Animated.View
-                style={justPressed ? { opacity: thump, transform: [{ scale: thump.interpolate({ inputRange: [0, 1], outputRange: [2.4, 1] }) }, { rotate: thump.interpolate({ inputRange: [0, 1], outputRange: ['-25deg', '-6deg'] }) }] } : undefined}
-                testID="stamp-pressed"
-              >
-                <Stamp type={type} size={190} />
-              </Animated.View>
-              <Text variant="heading" size={17} color={meta.color} testID="stamp-earned">
-                {type === 'normal' ? '本日のハンコ 獲得！' : `本日のハンコ ＋ ${meta.name}ハンコ獲得！`}
-              </Text>
-            </>
-          ) : (
-            <>
-              <Stamp type={type} size={190} locked />
-              <Text variant="heading" size={17} color={colors.inkSoft} testID="stamp-pending">
-                {type === 'normal' ? '今日のハンコを押そう！' : `${meta.name}ハンコを押そう！（${streak}日連続）`}
-              </Text>
-            </>
-          )}
+      <FadeIn index={1}>
+        <View style={styles.halo}>
+          <PressableStamp type={type} size={190} claimed={claimed} onPress={press} onStamped={() => setPressed(true)} />
         </View>
-      </Card>
+        {!claimed && !pressed ? (
+          <Text variant="bodyBold" size={16} color={colors.blue} align="center" style={styles.tapHint} testID="stamp-pending">タップして ハンコを押す</Text>
+        ) : null}
+      </FadeIn>
 
-      <View style={styles.streakRow}>
-        <Text variant="num" size={44} color={colors.blue} testID="streak-count">{streak}</Text>
-        <Text variant="bodyBold" size={16} style={styles.streakLabel}>日連続達成!</Text>
-        <View style={styles.weekDots}>
-          {Array.from({ length: 7 }, (_, i) => (
-            <View key={i} style={[styles.weekDot, i < week && styles.weekDotOn, i === week - 1 && styles.weekDotToday]}>
-              {i < week ? <Ionicons name="checkmark" size={14} color={i === week - 1 ? colors.white : colors.blue} /> : null}
-            </View>
-          ))}
+      <View style={styles.after}>
+        {claimed ? (
+          <Text variant="title" size={22} align="center" testID="stamp-earned">
+            {type === 'normal' ? '今日のハンコを押しました' : `${meta.name}ハンコを獲得しました`}
+          </Text>
+        ) : pressed ? null : (
+          <Text variant="body" color={colors.inkSoft} align="center">
+            {type === 'normal' ? 'ハンコを押して、今日を締めくくりましょう' : `${streak}日連続の「${meta.name}ハンコ」がもらえます`}
+          </Text>
+        )}
+        <View style={styles.streakRow}>
+          <View style={styles.dots}>
+            {Array.from({ length: 7 }, (_, i) => (
+              <View key={i} style={[styles.dot, i < week && styles.dotOn, i === week - 1 && styles.dotToday]} />
+            ))}
+          </View>
+          <Text variant="bodyBold" color={colors.blue} size={14} testID="streak-count">{streak}日連続</Text>
         </View>
       </View>
 
-      <Card style={styles.nextCard}>
-        <Stamp type={next.type} size={46} locked />
-        <View style={styles.grow}>
-          <Text variant="bodyBold" size={15}>つぎは {next.streak}日連続で {STAMP_META[next.type].name}ハンコ</Text>
-          <View style={styles.track}><View style={[styles.fill, { width: `${Math.min(100, (streak / next.streak) * 100)}%`, backgroundColor: STAMP_META[next.type].color }]} /></View>
-        </View>
-        <Text variant="caption" size={13}>あと{next.remaining}日</Text>
-      </Card>
+      <FadeIn index={2}>
+        <Card style={styles.nextCard}>
+          <Stamp type={next.type} size={46} locked />
+          <View style={styles.grow}>
+            <Text variant="bodyBold" size={13}>つぎは{next.streak}日連続で「{STAMP_META[next.type].name}ハンコ」</Text>
+            <View style={styles.track}><View style={[styles.fill, { width: `${Math.min(100, (streak / next.streak) * 100)}%`, backgroundColor: STAMP_META[next.type].color }]} /></View>
+          </View>
+          <Text variant="caption" size={12}>あと{next.remaining}日</Text>
+        </Card>
+      </FadeIn>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 16 },
-  head: { alignItems: 'center', gap: 6, paddingTop: 6 },
-  allDone: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  big: { textAlign: 'center', lineHeight: 46 },
-  stampCard: { borderRadius: radius.xl, alignItems: 'center', paddingVertical: 20, borderWidth: 2, borderStyle: 'dashed', borderColor: colors.yellowBorder },
-  stampBox: { alignItems: 'center', gap: 14 },
-  streakRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  streakLabel: { flexShrink: 0 },
-  weekDots: { flexDirection: 'row', gap: 6, marginLeft: 'auto' },
-  weekDot: { width: 26, height: 26, borderRadius: 13, backgroundColor: colors.beige, alignItems: 'center', justifyContent: 'center' },
-  weekDotOn: { backgroundColor: colors.blueSoft },
-  weekDotToday: { backgroundColor: colors.blue, borderWidth: 2, borderColor: colors.blueBorder },
-  nextCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  grow: { flex: 1, gap: 6 },
-  track: { height: 8, borderRadius: 4, backgroundColor: '#EFE7D2', overflow: 'hidden' },
-  fill: { height: 8, borderRadius: 4 },
+  content: { gap: 18, alignItems: 'stretch' },
+  head: { alignItems: 'center', gap: 8, paddingTop: 12 },
+  eyebrow: { letterSpacing: 3 },
+  halo: { alignSelf: 'center', width: 280, height: 280, borderRadius: 140, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', shadowColor: '#1B2240', shadowOpacity: 0.08, shadowRadius: 24, shadowOffset: { width: 0, height: 8 }, elevation: 2 },
+  tapHint: { marginTop: -4 },
+  after: { alignItems: 'center', gap: 14 },
+  streakRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  dots: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  dot: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.track },
+  dotOn: { backgroundColor: colors.blue },
+  dotToday: { width: 15, height: 15, borderRadius: 8, borderWidth: 3, borderColor: colors.blueBorder },
+  nextCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },
+  grow: { flex: 1, gap: 8 },
+  track: { height: 5, borderRadius: 3, backgroundColor: colors.track, overflow: 'hidden' },
+  fill: { height: 5, borderRadius: 3 },
   footer: { gap: 4 },
 });

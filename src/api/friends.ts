@@ -8,7 +8,7 @@ export const fetchFriendsOverview = () => rpc('friends_overview');
 
 export async function sendFriendRequest(code: string) {
   const normalized = normalizeFriendCode(code);
-  if (!isValidFriendCode(normalized)) throw new ValidationError('フレンドコードは8文字の英数字だよ');
+  if (!isValidFriendCode(normalized)) throw new ValidationError('フレンドコードは8文字の英数字です');
   return rpc('send_friend_request', { p_code: normalized });
 }
 

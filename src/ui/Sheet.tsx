@@ -12,7 +12,7 @@ interface SheetProps {
   children: ReactNode;
 }
 
-/** 下から出るシート(PDFの「タスクを追加」) */
+/** 下から出るシート(「タスクを追加」など) */
 export function Sheet({ visible, title, onClose, children }: SheetProps) {
   const insets = useSafeAreaInsets();
   return (
@@ -22,9 +22,9 @@ export function Sheet({ visible, title, onClose, children }: SheetProps) {
         <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
           <View style={styles.handle} />
           <View style={styles.header}>
-            <Text variant="title" size={22}>{title}</Text>
+            <Text variant="title" size={24}>{title}</Text>
             <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="閉じる" style={styles.close} testID="sheet-close">
-              <Ionicons name="close" size={22} color={colors.ink} />
+              <Ionicons name="close" size={24} color={colors.ink} />
             </Pressable>
           </View>
           <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
@@ -38,17 +38,10 @@ export function Sheet({ visible, title, onClose, children }: SheetProps) {
 
 const styles = StyleSheet.create({
   fill: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(27,42,92,0.45)' },
-  sheet: {
-    backgroundColor: colors.bg,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    maxHeight: '90%',
-  },
-  handle: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: colors.blueBorder, marginBottom: 10 },
+  backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(20,24,43,0.45)' },
+  sheet: { backgroundColor: colors.white, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, paddingHorizontal: 20, paddingTop: 10, maxHeight: '92%' },
+  handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.track, marginBottom: 12 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  close: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
-  body: { gap: 14, paddingBottom: 8 },
+  close: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  body: { gap: 16, paddingBottom: 8 },
 });

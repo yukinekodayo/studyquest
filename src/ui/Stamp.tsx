@@ -7,12 +7,13 @@ interface StampProps {
   size?: number;
   /** 未獲得(グレー表示) */
   locked?: boolean;
-  /** 中央の文字を上書き(タスクのハンコに「英」など) */
+  /** 中央の文字を上書き(タスクの頭文字など) */
   mark?: string;
   showSub?: boolean;
 }
 
 const SCALLOPED: StampType[] = ['green', 'gold', 'special'];
+const TINT: Record<StampType, string> = { normal: '#FDEEEC', blue: '#E8EEFC', green: '#EAF5EE', gold: '#FBF3DE', special: '#EFEAFA', team: '#EAF0F6' };
 
 function scallopPoints(cx: number, cy: number, r: number, bumps: number, amp: number): string {
   const pts: string[] = [];
@@ -24,64 +25,66 @@ function scallopPoints(cx: number, cy: number, r: number, bumps: number, amp: nu
   }
   return pts.join(' ');
 }
-const SCALLOP = scallopPoints(50, 50, 42, 14, 3.5);
+const SCALLOP = scallopPoints(50, 50, 43, 16, 2.4);
 
-/** 「済」「7日連続」などのハンコ。すべてSVGで描画(画像アセット不要) */
+/** 「済」「7日連続」などのハンコ(明朝体の「済」+ 二重の輪)。すべてSVG描画 */
 export function Stamp({ type, size = 64, locked = false, mark, showSub = true }: StampProps) {
   const meta = STAMP_META[type];
-  const color = locked ? '#B4BCCD' : meta.color;
+  const color = locked ? '#BDBAB1' : meta.color;
+  const fill = locked ? '#F1EFEA' : TINT[type];
   const text = mark ?? meta.mark;
-  const fill = locked ? '#F3F5F9' : type === 'normal' ? '#FFF7F7' : '#FFFFFF';
-  const hasSub = showSub && !!meta.sub && mark === undefined;
-  const fontSize = text.length >= 3 ? 27 : text.length === 2 ? 34 : hasSub ? 40 : 46;
-  const textY = hasSub ? 58 : 65;
+  const isKanji = type === 'normal' || type === 'team' || mark !== undefined;
+  const hasSub = showSub && !!meta.sub && mark === undefined && !isKanji;
+  const numSize = text.length >= 3 ? 30 : text.length === 2 ? 38 : 46;
 
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel={`${meta.name}ハンコ${locked ? '(未獲得)' : ''}`}>
       {SCALLOPED.includes(type) ? (
         <>
-          <Polygon points={SCALLOP} fill={locked ? '#F3F5F9' : type === 'green' ? '#EAF7EF' : type === 'gold' ? '#FFF6D9' : '#F1EAFD'} stroke={color} strokeWidth={3.5} strokeLinejoin="round" strokeDasharray={locked ? '5 4' : undefined} />
-          <Circle cx={50} cy={50} r={33} fill="none" stroke={color} strokeWidth={1.4} strokeDasharray="2 3" />
+          <Polygon points={SCALLOP} fill={fill} stroke={color} strokeWidth={2} strokeLinejoin="round" />
+          <Circle cx={50} cy={50} r={35} fill="none" stroke={color} strokeWidth={1} />
         </>
       ) : (
         <>
-          <Circle cx={50} cy={50} r={45} fill={fill} stroke={color} strokeWidth={4} strokeDasharray={locked ? '6 5' : undefined} />
-          <Circle cx={50} cy={50} r={37} fill="none" stroke={color} strokeWidth={1.4} strokeDasharray={type === 'blue' ? '2 3' : undefined} />
+          <Circle cx={50} cy={50} r={46} fill={fill} stroke={color} strokeWidth={3.2} />
+          <Circle cx={50} cy={50} r={39} fill="none" stroke={color} strokeWidth={1.2} />
         </>
       )}
-      <SvgText x={50} y={textY} fontSize={fontSize} fontFamily={fonts.display} fill={color} textAnchor="middle">
-        {text}
-      </SvgText>
-      {hasSub ? (
-        <SvgText x={50} y={76} fontSize={11} fontFamily={fonts.bold} fill={color} textAnchor="middle">
-          {meta.sub}
+      {isKanji ? (
+        <SvgText x={50} y={mark ? 66 : 67} fontSize={mark ? 46 : 52} fontFamily={fonts.serif} fill={color} textAnchor="middle">
+          {text}
         </SvgText>
-      ) : null}
+      ) : (
+        <>
+          <SvgText x={50} y={hasSub ? 59 : 64} fontSize={numSize} fontFamily={fonts.num} fill={color} textAnchor="middle">
+            {text}
+          </SvgText>
+          {hasSub ? (
+            <SvgText x={50} y={76} fontSize={11} fontFamily={fonts.bold} fill={color} textAnchor="middle">
+              {meta.sub}
+            </SvgText>
+          ) : null}
+        </>
+      )}
     </Svg>
   );
 }
 
-/** まだ押されていない枠(点線の丸) */
-export function EmptyStamp({ size = 40, label }: { size?: number; label?: string }) {
+/** まだ押されていない枠(薄い円) */
+export function EmptyStamp({ size = 40 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel="未達成">
-      <Circle cx={50} cy={50} r={44} fill="none" stroke="#C9CFDC" strokeWidth={4} strokeDasharray="9 7" />
-      {label ? (
-        <SvgText x={50} y={64} fontSize={40} fontFamily={fonts.display} fill="#9AA3B8" textAnchor="middle">
-          {label}
-        </SvgText>
-      ) : null}
+      <Circle cx={50} cy={50} r={44} fill="none" stroke="#D9D6CD" strokeWidth={3} />
     </Svg>
   );
 }
 
-
-/** 達成したけどまだ押していない日(タップで押せる) */
+/** 達成したけどまだ押していない日(タップで押せる)。点線の青い輪 */
 export function PendingStamp({ size = 40 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel="ハンコを押せる">
-      <Circle cx={50} cy={50} r={44} fill="#E3ECFC" stroke="#2F6FE0" strokeWidth={4} strokeDasharray="9 7" />
-      <SvgText x={50} y={62} fontSize={34} fontFamily={fonts.display} fill="#2F6FE0" textAnchor="middle">押す</SvgText>
+      <Circle cx={50} cy={50} r={44} fill="#E6ECFB" stroke="#2350D2" strokeWidth={3.5} strokeDasharray="8 7" />
+      <SvgText x={50} y={61} fontSize={30} fontFamily={fonts.serif} fill="#2350D2" textAnchor="middle">押</SvgText>
     </Svg>
   );
 }

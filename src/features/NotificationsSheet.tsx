@@ -15,7 +15,7 @@ export const REACTIONS: Array<{ kind: ReactionKind; emoji: string; label: string
   { kind: 'clap', emoji: '👏', label: 'すごい' },
   { kind: 'fire', emoji: '🔥', label: 'がんばれ' },
   { kind: 'party', emoji: '🎉', label: 'おめでとう' },
-  { kind: 'book', emoji: '📚', label: '一緒にやろう' },
+  { kind: 'book', emoji: '📚', label: '一緒に' },
 ];
 
 export function NotificationsSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
@@ -36,14 +36,14 @@ export function NotificationsSheet({ visible, onClose }: { visible: boolean; onC
   return (
     <Sheet visible={visible} title="お知らせ" onClose={onClose}>
       {reqs.length === 0 && cheers.length === 0 ? (
-        <Text variant="body" color={colors.inkSoft} align="center">新しいお知らせはないよ</Text>
+        <Text variant="body" color={colors.inkSoft} align="center">新しいお知らせはありません</Text>
       ) : null}
       {reqs.map((r) => (
         <View key={r.id} style={styles.row}>
-          <Avatar animal={r.avatar} size={44} />
+          <Avatar name={r.nickname} color={r.avatar} size={44} />
           <View style={styles.grow}>
             <Text variant="bodyBold">{r.nickname}さん</Text>
-            <Text variant="caption">フレンド申請が届いているよ</Text>
+            <Text variant="caption">フレンド申請が届いています</Text>
           </View>
           <Button label="承認" size="sm" onPress={() => respond(r.id, true)} />
           <Button label="見送る" size="sm" variant="ghost" onPress={() => respond(r.id, false)} />

@@ -1,21 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { finishSession, pauseSession, resumeSession } from '@/api/sessions';
 import { mustProgress } from '@/domain/quest';
 import { clockOffsetMs, elapsedSeconds, type SessionState } from '@/domain/timer';
+import { haptic } from '@/lib/haptics';
 import type { CompleteTaskResult, TaskRow } from '@/types/database';
-import { Mascot } from '@/ui/Avatar';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { ProgressSegments } from '@/ui/ProgressSegments';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { useRun } from '@/ui/Toast';
-import { colors, radius } from '@/ui/theme';
+import { colors } from '@/ui/theme';
+import { OPTIMISTIC_SESSION_ID } from '../actions';
 import { keys, useStats } from '../hooks';
 import { useNow } from '../useNow';
 import { TimerRing } from './TimerRing';
@@ -35,7 +35,9 @@ export function TimerView({ task, session, offset, tasks, onFinished, onBack }: 
   const router = useRouter();
   const stats = useStats();
   const running = session.status === 'running';
-  const now = useNow(500, running);
+  // サーバーに記録中(開始直後)は、一時停止・終了を少しだけ待たせる
+  const syncing = session.id === OPTIMISTIC_SESSION_ID;
+  const now = useNow(250, running);
   const elapsed = elapsedSeconds(session, now, offset);
   const planned = task.planned_minutes * 60;
   const over = elapsed >= planned;
@@ -45,7 +47,7 @@ export function TimerView({ task, session, offset, tasks, onFinished, onBack }: 
   useEffect(() => {
     if (running && over && !notified.current) {
       notified.current = true;
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+      haptic.success();
     }
   }, [running, over]);
 
@@ -57,14 +59,14 @@ export function TimerView({ task, session, offset, tasks, onFinished, onBack }: 
   const lastOne = isMust && progress.remaining === 1 && !alreadyCleared;
 
   const message = over
-    ? '予定の時間になったよ！「終了」で完了にしよう'
+    ? '予定の時間になりました。「終了」で完了にしましょう'
     : !running
-      ? '一時停止中。準備ができたら再開しよう'
+      ? '一時停止中です。準備ができたら再開しましょう'
       : lastOne
-        ? '最後の1つ！ラストいこう'
+        ? '最後の1つです。ラストいきましょう'
         : elapsed >= planned / 2
-          ? 'いい調子！このまま進もう'
-          : '集中していこう！';
+          ? 'いい調子です。このまま続けましょう'
+          : '集中していきましょう';
 
   const applySession = (s: SessionState) => {
     qc.setQueryData(keys.session(task.id), { session: s, offset: clockOffsetMs(s.server_now, Date.now()) });
@@ -76,7 +78,10 @@ export function TimerView({ task, session, offset, tasks, onFinished, onBack }: 
   };
   const finish = async () => {
     const result = await run(() => finishSession(session.id, true));
-    if (result) onFinished(result);
+    if (result) {
+      haptic.success();
+      onFinished(result);
+    }
   };
   const quit = async () => {
     const r = await run(() => finishSession(session.id, false));
@@ -94,42 +99,39 @@ export function TimerView({ task, session, offset, tasks, onFinished, onBack }: 
         <Card style={styles.footerCard} testID="timer-footer">
           {isMust && !alreadyCleared ? (
             <>
-              <Text variant="bodyBold" size={15}>
-                {lastOne ? `これを終えると ${afterDone}/${progress.total} → 今日のハンコ！` : `これを終えると ${afterDone}/${progress.total}（あと${progress.total - afterDone}つ）`}
+              <Text variant="bodyBold" size={14}>
+                {lastOne ? `これを終えると ${afterDone}/${progress.total}（今日のハンコ）` : `これを終えると ${afterDone}/${progress.total}（あと${progress.total - afterDone}つ）`}
               </Text>
               <ProgressSegments total={progress.total} done={afterDone} />
             </>
           ) : (
-            <Text variant="bodyBold" size={15}>{isMust ? '今日はもうクリアずみ。終えるとXPがもらえるよ' : 'ボーナス：終えるとXPがもらえるよ'}</Text>
+            <Text variant="bodyBold" size={14}>{isMust ? '今日はもうクリアずみ。終えるとXPがもらえます' : 'ボーナス：終えるとXPがもらえます'}</Text>
           )}
         </Card>
       }
     >
       <View style={styles.topRow}>
         <Pressable onPress={onBack} style={styles.back} accessibilityRole="button" accessibilityLabel="もどる" testID="timer-back">
-          <Ionicons name="chevron-back" size={24} color={colors.ink} />
+          <Ionicons name="chevron-back" size={26} color={colors.ink} />
         </Pressable>
-        <Text variant="bodyBold" size={14} color={colors.inkSoft}>今日のクエスト {progress.done}/{progress.total}</Text>
+        <Text variant="caption" size={13}>今日のクエスト <Text variant="bodyBold" size={14}>{progress.done} / {progress.total}</Text></Text>
       </View>
 
-      <View style={styles.titleRow}>
-        <Text variant="title" testID="timer-title">{task.title}</Text>
-        <Text variant="bodyBold" size={14} color={colors.inkSoft}>目安 {task.planned_minutes}分</Text>
-      </View>
-
-      <View style={styles.mascotRow}>
-        <Mascot size={64} />
-        <View style={styles.bubble}><Text variant="bodyBold" size={15} color={colors.blue}>{message}</Text></View>
+      <View style={styles.titleBlock}>
+        <Text variant="display" size={32} testID="timer-title">{task.title}</Text>
+        <Text variant="caption" size={13}>目安 {task.planned_minutes}分</Text>
       </View>
 
       <TimerRing plannedMinutes={task.planned_minutes} elapsed={elapsed} paused={!running} />
 
+      <Text variant="body" color={colors.inkSoft} align="center">{message}</Text>
+
       <View style={styles.buttons}>
-        <Button label={running ? '一時停止' : '再開'} icon={running ? 'pause' : 'play'} variant="soft" onPress={togglePause} style={styles.btn} testID="timer-pause" />
-        <Button label="終了" icon="stop" onPress={finish} style={styles.btn} testID="timer-finish" />
+        <Button label={running ? '一時停止' : '再開'} icon={running ? 'pause' : 'play'} variant="soft" onPress={togglePause} disabled={syncing} style={styles.btn} testID="timer-pause" />
+        <Button label="終了" icon="stop" onPress={finish} disabled={syncing} style={styles.btn} testID="timer-finish" />
       </View>
       <Text variant="caption" align="center">「終了」で{task.title}を完了にします</Text>
-      <Pressable onPress={quit} style={styles.quit} accessibilityRole="button" testID="timer-quit">
+      <Pressable onPress={quit} disabled={syncing} style={styles.quit} accessibilityRole="button" testID="timer-quit">
         <Text variant="caption" color={colors.inkSoft} style={styles.underline}>完了にせずタイマーをやめる</Text>
       </Pressable>
     </Screen>
@@ -139,13 +141,11 @@ export function TimerView({ task, session, offset, tasks, onFinished, onBack }: 
 const styles = StyleSheet.create({
   content: { gap: 14 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  back: { width: 46, height: 46, borderRadius: 16, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
-  titleRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 10 },
-  mascotRow: { flexDirection: 'row', alignItems: 'center', gap: 10, justifyContent: 'center' },
-  bubble: { flexShrink: 1, backgroundColor: colors.blueSoft, borderRadius: radius.lg, paddingVertical: 10, paddingHorizontal: 14 },
+  back: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
+  titleBlock: { alignItems: 'center', gap: 2 },
   buttons: { flexDirection: 'row', gap: 12 },
   btn: { flex: 1 },
   quit: { alignSelf: 'center', minHeight: 40, justifyContent: 'center' },
   underline: { textDecorationLine: 'underline' },
-  footerCard: { gap: 8 },
+  footerCard: { gap: 10, padding: 16 },
 });

@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { completeTask } from '@/api/tasks';
 import type { CompleteTaskResult, TaskRow } from '@/types/database';
-import { Mascot } from '@/ui/Avatar';
 import { Button } from '@/ui/Button';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
@@ -39,10 +38,9 @@ export function ReadyView({ task, onManualDone }: { task: TaskRow; onManualDone:
       }
     >
       <View style={styles.center}>
-        <Mascot size={96} />
-        <Text variant="title" testID="ready-title">{task.title}</Text>
+        <Text variant="display" testID="ready-title">{task.title}</Text>
         <Text variant="body" color={colors.inkSoft}>目安 {task.planned_minutes}分</Text>
-        <Text variant="caption" align="center">スタートすると友だちに「勉強中」が見えるよ</Text>
+        <Text variant="caption" align="center">スタートすると、友だちに「勉強中」と表示されます</Text>
       </View>
     </Screen>
   );

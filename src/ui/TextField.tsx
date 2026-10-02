@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 import { Text } from './Text';
 import { colors, fonts, radius } from './theme';
@@ -8,7 +9,8 @@ interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   hint?: string;
 }
 
-export function TextField({ label, error, hint, ...input }: TextFieldProps) {
+export function TextField({ label, error, hint, onFocus, onBlur, ...input }: TextFieldProps) {
+  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.wrap}>
       {label ? <Text variant="label">{label}</Text> : null}
@@ -16,7 +18,15 @@ export function TextField({ label, error, hint, ...input }: TextFieldProps) {
         placeholderTextColor={colors.inkFaint}
         accessibilityLabel={label}
         {...input}
-        style={[styles.input, error ? styles.inputError : null]}
+        onFocus={(e) => {
+          setFocused(true);
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocused(false);
+          onBlur?.(e);
+        }}
+        style={[styles.input, focused && styles.focused, error ? styles.inputError : null]}
       />
       {error ? <Text variant="caption" color={colors.red}>{error}</Text> : hint ? <Text variant="caption">{hint}</Text> : null}
     </View>
@@ -26,15 +36,16 @@ export function TextField({ label, error, hint, ...input }: TextFieldProps) {
 const styles = StyleSheet.create({
   wrap: { gap: 6 },
   input: {
-    minHeight: 54,
+    minHeight: 52,
     borderRadius: radius.md,
     backgroundColor: colors.beige,
     paddingHorizontal: 16,
-    fontFamily: fonts.bold,
+    fontFamily: fonts.body,
     fontSize: 16,
     color: colors.ink,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: 'transparent',
   },
+  focused: { borderColor: colors.blue, backgroundColor: colors.white },
   inputError: { borderColor: colors.red, backgroundColor: colors.redSoft },
 });

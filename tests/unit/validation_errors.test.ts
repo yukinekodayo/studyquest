@@ -23,14 +23,14 @@ describe('タスク入力の検証', () => {
 });
 
 describe('サインアップ入力', () => {
-  const ok = { email: ' Test@Example.com ', password: 'abcdefgh', nickname: 'ゆうき', avatar: 'cat' };
+  const ok = { email: ' Test@Example.com ', password: 'abcdefgh', nickname: 'ゆうき', avatar: 'blue' };
   it('メールは小文字化・トリム', () => expect(signupSchema.parse(ok).email).toBe('test@example.com'));
   it('弱い/不正な入力を拒否', () => {
     expect(signupSchema.safeParse({ ...ok, password: 'short' }).success).toBe(false);
     expect(signupSchema.safeParse({ ...ok, email: 'nope' }).success).toBe(false);
     expect(signupSchema.safeParse({ ...ok, nickname: '' }).success).toBe(false);
     expect(signupSchema.safeParse({ ...ok, nickname: 'あ'.repeat(13) }).success).toBe(false);
-    expect(signupSchema.safeParse({ ...ok, avatar: 'dragon' }).success).toBe(false);
+    expect(signupSchema.safeParse({ ...ok, avatar: 'cat' }).success).toBe(false);
   });
 });
 
@@ -51,15 +51,15 @@ describe('エラー → ユーザー向けメッセージ(技術的な内容を�
   });
   it('認証エラー', () => {
     expect(toUserMessage({ message: 'Invalid login credentials', code: 'invalid_credentials', status: 400 })).toContain('パスワード');
-    expect(toUserMessage({ message: 'User already registered', code: 'user_already_exists' })).toContain('登録されている');
+    expect(toUserMessage({ message: 'User already registered', code: 'user_already_exists' })).toContain('登録されています');
   });
   it('通信エラー', () => {
     expect(toUserMessage(new TypeError('Network request failed'))).toBe(NETWORK_ERROR);
     expect(toUserMessage(new TypeError('Failed to fetch'))).toBe(NETWORK_ERROR);
   });
   it('DB制約/権限/認証切れ', () => {
-    expect(toUserMessage({ message: 'new row violates check constraint "tasks_title_check"', code: '23514' })).toBe('入力内容を確認してね');
-    expect(toUserMessage({ message: 'permission denied for table tasks', code: '42501' })).toBe('この操作はできないよ');
+    expect(toUserMessage({ message: 'new row violates check constraint "tasks_title_check"', code: '23514' })).toBe('入力内容を確認してください');
+    expect(toUserMessage({ message: 'permission denied for table tasks', code: '42501' })).toBe('この操作はできません');
     expect(toUserMessage({ message: 'JWT expired', code: 'PGRST301', status: 401 })).toContain('ログイン');
   });
   it('未知のエラーは汎用メッセージで、生のメッセージや SQL を含まない', () => {
