@@ -32,6 +32,8 @@ export type TaskRow = {
   sort_order: number;
   xp_awarded: number;
   completed_at: string | null;
+  /** 「済」ハンコを押した日時(完了しただけでは null) */
+  stamped_at: string | null;
   created_at: string;
 };
 
@@ -210,6 +212,7 @@ export type Database = {
       today_tasks: { Args: Empty; Returns: TaskRow[] };
       complete_task: { Args: { p_task_id: string }; Returns: CompleteTaskResult };
       uncomplete_task: { Args: { p_task_id: string }; Returns: undefined };
+      stamp_task: { Args: { p_task_id: string }; Returns: { task_id: string; newly_stamped: boolean } };
       reorder_tasks: { Args: { p_ids: string[] }; Returns: undefined };
       start_session: { Args: { p_task_id: string }; Returns: SessionState };
       pause_session: { Args: { p_session_id: string }; Returns: SessionState };

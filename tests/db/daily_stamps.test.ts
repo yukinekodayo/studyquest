@@ -295,3 +295,43 @@ describe('ハンコを押す(claim_stamp)', () => {
     expect((await db.as(u).rpc('get_my_stats')).unclaimed_dates).toHaveLength(5);
   });
 });
+
+describe('タスクの「済」ハンコ(ユーザーが押す)', () => {
+  it('完了しただけでは押されていない。押すと記録され、2回押しても1回分', async () => {
+    const u = await db.signup('tstamp');
+    const t = await addTask(u, 'A');
+    const [{ stamped_at: s0 }] = await db.as(u).q('select stamped_at from tasks where id = $1', [t]);
+    expect(s0).toBeNull();
+    // 未完了のタスクには押せない
+    expect(await db.as(u).rpc('stamp_task', t).catch((e) => e.message)).toContain('SQ_TASK_NOT_DONE');
+    await db.as(u).rpc('complete_task', t);
+    const [{ stamped_at: s1 }] = await db.as(u).q('select stamped_at from tasks where id = $1', [t]);
+    expect(s1).toBeNull(); // 完了=自動では押されない
+    expect(await db.as(u).rpc('stamp_task', t)).toMatchObject({ newly_stamped: true });
+    expect(await db.as(u).rpc('stamp_task', t)).toMatchObject({ newly_stamped: false });
+    const [{ stamped_at: s2 }] = await db.as(u).q('select stamped_at from tasks where id = $1', [t]);
+    expect(s2).not.toBeNull();
+  });
+
+  it('押さなくても、完了すれば1日の達成にはカウントされる', async () => {
+    const u = await db.signup('tstamp2');
+    const t = await addTask(u, 'A');
+    const r = await db.as(u).rpc('complete_task', t);
+    expect(r.day.cleared).toBe(true);
+  });
+
+  it('未完了に戻すとハンコも外れる。他人のタスクには押せず、クライアントから直接は書けない', async () => {
+    const u = await db.signup('tstamp3');
+    const other = await db.signup('tstamp4');
+    const t = await addTask(u, 'A');
+    await db.as(u).rpc('complete_task', t);
+    expect(await db.as(other).rpc('stamp_task', t).catch((e) => e.message)).toContain('SQ_TASK_NOT_FOUND');
+    expect(await db.as(u).q('update tasks set stamped_at = now() where id = $1', [t]).catch((e) => e.message)).toMatch(/permission denied/);
+    await db.as(u).rpc('stamp_task', t);
+    await db.as(u).rpc('uncomplete_task', t);
+    const [{ stamped_at }] = await db.as(u).q('select stamped_at from tasks where id = $1', [t]);
+    expect(stamped_at).toBeNull();
+    await db.as(u).rpc('complete_task', t);
+    expect(await db.as(u).rpc('stamp_task', t)).toMatchObject({ newly_stamped: true });
+  });
+});

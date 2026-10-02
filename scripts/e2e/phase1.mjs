@@ -89,6 +89,17 @@ await tid(page, 'timer-finish').click();
 await tid(page, 'done-title').waitFor({ timeout: 15000 });
 check(norm(await tid(page, 'done-title').textContent()).includes('完了'), '「◯◯ 完了！」表示');
 check(norm(await tid(page, 'done-progress').textContent()) === '1 / 4', '進捗 1 / 4');
+// タスクの「済」ハンコも自動では押されない。自分でタップして押す
+check((await tid(page, 'stamp-pressed').count()) === 0, 'タイマーを終えても「済」は自動では押されない');
+check(norm(await tid(page, 'stamp-pending').textContent()).includes('押す'), '「タップして「済」を押す」の案内');
+await shot(page, '05a-task-done-before-press');
+await tid(page, 'press-stamp').click();
+await tid(page, 'stamp-pressed').waitFor({ timeout: 10000 });
+check(true, '「済」をタップして押した');
+await page.waitForTimeout(1500);
+await page.reload({ waitUntil: 'domcontentloaded' });
+await tid(page, 'stamp-pressed').waitFor({ timeout: 20000 });
+check((await tid(page, 'stamp-pending').count()) === 0, 'リロードしても押した状態が保持される(DB保存)');
 await shot(page, '05-task-done');
 for (let i = 0; i < 2; i++) {
   await tid(page, 'next-task').click();
@@ -104,6 +115,9 @@ console.log('8. 最後の1つ → TODAY COMPLETE!');
 await tid(page, 'next-task').click();
 await tid(page, 'timer-clock').waitFor();
 await tid(page, 'timer-finish').click();
+await tid(page, 'done-title').waitFor({ timeout: 15000 });
+check(!page.url().includes('/complete'), '最後のタスクを終えても、すぐには完了画面に飛ばない(「済」を押してから進む)');
+await tid(page, 'to-complete').click();
 await page.waitForURL('**/complete', { timeout: 20000 });
 await tid(page, 'press-stamp').waitFor({ timeout: 15000 });
 check(norm(await tid(page, 'all-done').textContent()).includes('TODAY COMPLETE'), 'TODAY COMPLETE 画面');

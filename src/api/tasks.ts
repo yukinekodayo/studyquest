@@ -39,3 +39,6 @@ export async function deleteTask(id: string): Promise<void> {
 export const reorderTasks = (ids: string[]): Promise<void> => rpc('reorder_tasks', { p_ids: ids }).then(() => undefined);
 export const completeTask = (id: string) => rpc('complete_task', { p_task_id: id });
 export const uncompleteTask = (id: string): Promise<void> => rpc('uncomplete_task', { p_task_id: id }).then(() => undefined);
+
+/** タスクの「済」ハンコを押す(完了しただけでは押されない) */
+export const stampTask = (id: string) => rpc('stamp_task', { p_task_id: id });

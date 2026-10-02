@@ -15,7 +15,7 @@ import { FadeIn } from '@/ui/FadeIn';
 import { PressableScale } from '@/ui/PressableScale';
 import { ProgressSegments } from '@/ui/ProgressSegments';
 import { Screen } from '@/ui/Screen';
-import { Stamp } from '@/ui/Stamp';
+import { PendingStamp, Stamp } from '@/ui/Stamp';
 import { ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
 import { useRun } from '@/ui/Toast';
@@ -68,8 +68,8 @@ export default function QuestScreen() {
         </View>
       ) : t.status === 'done' ? (
         <View style={styles.doneWrap}>
-          <Stamp type="normal" size={30} />
-          <Text variant="bodyBold" size={14} color={colors.green}>完了</Text>
+          {t.stamped_at ? <Stamp type="normal" size={30} /> : <PendingStamp size={30} />}
+          <Text variant="bodyBold" size={14} color={t.stamped_at ? colors.green : colors.blue}>{t.stamped_at ? '完了' : '押す'}</Text>
         </View>
       ) : (
         <Button label={t.status === 'doing' ? 'つづける' : '開始'} size="sm" onPress={() => startTask(t.id)} testID={`start-${t.title}`} style={styles.startBtn} />

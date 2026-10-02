@@ -123,6 +123,8 @@ await tid(b.page, 'home-cta-start').waitFor({ timeout: 20000 });
 await tid(b.page, 'home-cta-start').click();
 await tid(b.page, 'timer-clock').waitFor({ timeout: 15000 });
 await tid(b.page, 'timer-finish').click();
+await tid(b.page, 'to-complete').waitFor({ timeout: 20000 });
+await tid(b.page, 'to-complete').click();
 await b.page.waitForURL('**/complete', { timeout: 20000 });
 check(true, 'はるが今日クリア(ハンコを押す画面)');
 // 「あとで押す」→ ホームで催促 → ハンコ帳の「押す」から押せる

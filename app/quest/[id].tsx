@@ -39,8 +39,6 @@ export default function QuestDetailScreen() {
   const handleResult = async (r: CompleteTaskResult) => {
     setResult(r);
     await qc.invalidateQueries();
-    // 最後の1つを終えたら、そのまま「今日のクエスト COMPLETE!」へ
-    if (r.day?.newly_cleared) router.replace('/complete');
   };
 
   if (task.data.status === 'done') {

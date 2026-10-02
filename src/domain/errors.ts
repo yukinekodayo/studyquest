@@ -7,6 +7,7 @@ const SQ_MESSAGES: Record<string, string> = {
   SQ_TASK_NOT_FOUND: 'このタスクは見つかりませんでした。すでに削除されたかもしれません',
   SQ_TASK_NOT_TODAY: '今日のタスクだけ操作できます',
   SQ_TASK_ALREADY_DONE: 'このタスクはすでに完了しています',
+  SQ_TASK_NOT_DONE: 'まだ完了していないタスクには、ハンコを押せません',
   SQ_TASK_DATE_INVALID: '日付が正しくありません',
   SQ_TASK_LIMIT: '1日に作れるタスクは20個までです',
   SQ_NOT_CLEARED: 'その日はまだクリアしていないので、ハンコは押せません',
