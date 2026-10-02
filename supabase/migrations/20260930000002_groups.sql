@@ -7,6 +7,7 @@ create table public.groups (
   owner_id   uuid not null references public.profiles(id) on delete cascade,
   created_at timestamptz not null default now()
 );
+alter table public.groups enable row level security;
 
 create table public.group_members (
   group_id   uuid not null references public.groups(id) on delete cascade,
@@ -18,6 +19,7 @@ create table public.group_members (
   primary key (group_id, user_id),
   check ((status = 'joined') = (joined_at is not null))
 );
+alter table public.group_members enable row level security;
 create index group_members_user_idx on public.group_members (user_id);
 
 create or replace function public._is_group_member(p_group uuid, p_uid uuid, p_joined_only boolean default true)
@@ -28,8 +30,6 @@ returns boolean language sql stable security definer set search_path = public, p
   )
 $$;
 
-alter table public.groups enable row level security;
-alter table public.group_members enable row level security;
 
 create policy groups_select on public.groups for select to authenticated
   using (public._is_group_member(id, auth.uid(), false));

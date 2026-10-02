@@ -13,6 +13,7 @@ create table public.stamp_types (
   min_streak  int  not null default 0,
   sort_order  int  not null
 );
+alter table public.stamp_types enable row level security;
 
 insert into public.stamp_types (code, name, min_streak, sort_order) values
   ('normal',  '通常ハンコ', 0,   1),
@@ -35,6 +36,7 @@ create table public.profiles (
   share_subject boolean not null default true,  -- 勉強中の教科名を友だちに見せる
   created_at    timestamptz not null default now()
 );
+alter table public.profiles enable row level security;
 
 create table public.user_stats (
   user_id             uuid primary key references public.profiles(id) on delete cascade,
@@ -44,6 +46,7 @@ create table public.user_stats (
   total_days          int  not null default 0 check (total_days >= 0),
   last_completed_date date
 );
+alter table public.user_stats enable row level security;
 
 ------------------------------------------------------------------
 -- タスク
@@ -71,6 +74,7 @@ create table public.tasks (
   completed_at    timestamptz,
   created_at      timestamptz not null default now()
 );
+alter table public.tasks enable row level security;
 create index tasks_user_date_idx on public.tasks (user_id, task_date, sort_order);
 
 ------------------------------------------------------------------
@@ -90,6 +94,7 @@ create table public.study_sessions (
   actual_seconds      int check (actual_seconds >= 0),
   check ((status = 'running') = (run_started_at is not null))
 );
+alter table public.study_sessions enable row level security;
 create unique index study_sessions_one_open_per_task on public.study_sessions (task_id) where status <> 'finished';
 create unique index study_sessions_one_running_per_user on public.study_sessions (user_id) where status = 'running';
 create index study_sessions_user_idx on public.study_sessions (user_id, started_at desc);
@@ -106,6 +111,7 @@ create table public.daily_completions (
   created_at     timestamptz not null default now(),
   unique (user_id, completed_date)              -- 1日1回だけ
 );
+alter table public.daily_completions enable row level security;
 
 create table public.stamps (
   id           uuid primary key default gen_random_uuid(),
@@ -116,6 +122,7 @@ create table public.stamps (
   created_at   timestamptz not null default now(),
   unique (user_id, earned_date)                 -- 同じ日にハンコは1つだけ
 );
+alter table public.stamps enable row level security;
 
 ------------------------------------------------------------------
 -- フレンド
@@ -129,6 +136,7 @@ create table public.friend_requests (
   check (from_user <> to_user),
   unique (from_user, to_user)
 );
+alter table public.friend_requests enable row level security;
 
 create table public.friendships (
   user_a     uuid not null references public.profiles(id) on delete cascade,
@@ -137,6 +145,7 @@ create table public.friendships (
   primary key (user_a, user_b),
   check (user_a < user_b)
 );
+alter table public.friendships enable row level security;
 create index friendships_b_idx on public.friendships (user_b);
 
 create table public.reactions (
@@ -149,6 +158,7 @@ create table public.reactions (
   check (from_user <> to_user),
   unique (from_user, to_user, reaction_date, kind)
 );
+alter table public.reactions enable row level security;
 create index reactions_to_idx on public.reactions (to_user, reaction_date);
 
 ------------------------------------------------------------------
@@ -785,16 +795,6 @@ end $$;
 ------------------------------------------------------------------
 -- RLS
 ------------------------------------------------------------------
-alter table public.stamp_types      enable row level security;
-alter table public.profiles         enable row level security;
-alter table public.user_stats       enable row level security;
-alter table public.tasks            enable row level security;
-alter table public.study_sessions   enable row level security;
-alter table public.daily_completions enable row level security;
-alter table public.stamps           enable row level security;
-alter table public.friend_requests  enable row level security;
-alter table public.friendships      enable row level security;
-alter table public.reactions        enable row level security;
 
 create policy stamp_types_read on public.stamp_types for select to authenticated using (true);
 
