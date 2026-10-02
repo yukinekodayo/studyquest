@@ -100,7 +100,12 @@ export function DoneView({ task, tasks, stats, result }: Props) {
               </View>
             ))}
           </View>
-          {!progress.cleared ? (
+          {!progress.cleared && stats?.cleared_today ? (
+            <View style={styles.tease}>
+              <Ionicons name="ribbon" size={26} color={colors.red} />
+              <Text variant="bodyBold" size={14} style={styles.grow}>今日のクエストはもうクリアずみだよ</Text>
+            </View>
+          ) : !progress.cleared ? (
             <View style={styles.tease}>
               <Stamp type={rewardStamp} size={36} />
               <Text variant="bodyBold" size={14} style={styles.grow}>

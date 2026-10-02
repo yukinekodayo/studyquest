@@ -16,7 +16,7 @@ import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { useRun } from '@/ui/Toast';
 import { colors, radius } from '@/ui/theme';
-import { keys } from '../hooks';
+import { keys, useStats } from '../hooks';
 import { useNow } from '../useNow';
 import { TimerRing } from './TimerRing';
 
@@ -33,6 +33,7 @@ export function TimerView({ task, session, offset, tasks, onFinished, onBack }: 
   const run = useRun();
   const qc = useQueryClient();
   const router = useRouter();
+  const stats = useStats();
   const running = session.status === 'running';
   const now = useNow(500, running);
   const elapsed = elapsedSeconds(session, now, offset);
@@ -51,7 +52,9 @@ export function TimerView({ task, session, offset, tasks, onFinished, onBack }: 
   const progress = mustProgress(tasks);
   const isMust = task.kind === 'must';
   const afterDone = isMust ? progress.done + 1 : progress.done;
-  const lastOne = isMust && progress.remaining === 1;
+  // 今日すでにクリア済みなら、もう一度ハンコがもらえるような案内は出さない
+  const alreadyCleared = !!stats.data?.cleared_today;
+  const lastOne = isMust && progress.remaining === 1 && !alreadyCleared;
 
   const message = over
     ? '予定の時間になったよ！「終了」で完了にしよう'
@@ -89,7 +92,7 @@ export function TimerView({ task, session, offset, tasks, onFinished, onBack }: 
       contentStyle={styles.content}
       footer={
         <Card style={styles.footerCard} testID="timer-footer">
-          {isMust ? (
+          {isMust && !alreadyCleared ? (
             <>
               <Text variant="bodyBold" size={15}>
                 {lastOne ? `これを終えると ${afterDone}/${progress.total} → 今日のハンコ！` : `これを終えると ${afterDone}/${progress.total}（あと${progress.total - afterDone}つ）`}
@@ -97,7 +100,7 @@ export function TimerView({ task, session, offset, tasks, onFinished, onBack }: 
               <ProgressSegments total={progress.total} done={afterDone} />
             </>
           ) : (
-            <Text variant="bodyBold" size={15}>ボーナス：終えるとXPがもらえるよ</Text>
+            <Text variant="bodyBold" size={15}>{isMust ? '今日はもうクリアずみ。終えるとXPがもらえるよ' : 'ボーナス：終えるとXPがもらえるよ'}</Text>
           )}
         </Card>
       }

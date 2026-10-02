@@ -142,7 +142,7 @@ export default function HomeScreen() {
           </>
         )}
 
-        {progress.total > 0 && !progress.cleared ? (
+        {progress.total > 0 && !progress.cleared && !s.cleared_today ? (
           <View style={styles.reward} testID="reward-banner">
             <Stamp type={rewardStamp} size={44} />
             <View style={styles.rewardText}>

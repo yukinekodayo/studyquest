@@ -148,6 +148,8 @@ console.log('11. 同じ日に再度タスクを完了してもハンコは増え
 await tid(page, 'nav-quest').click();
 await addTask(page, { title: '追加のタスク', minutes: 10 });
 await tid(page, 'start-追加のタスク').click();
+await tid(page, 'timer-clock').waitFor();
+check(!norm(await tid(page, 'timer-footer').textContent()).includes('ハンコ！'), 'クリア済みの日は、タイマー下に「今日のハンコ！」の案内を出さない');
 await tid(page, 'timer-finish').click();
 await tid(page, 'done-title').waitFor({ timeout: 15000 });
 check(!page.url().includes('/complete'), '2回目は「TODAY COMPLETE」に飛ばない(二重付与なし)');
