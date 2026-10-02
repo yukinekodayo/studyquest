@@ -24,7 +24,7 @@ export default function StampsScreen() {
   const qc = useQueryClient();
   const stats = useStats();
   const today = stats.data?.today;
-  const t = today ? parseYmd(today) : null;
+  const t = useMemo(() => (today ? parseYmd(today) : null), [today]);
   const [offset, setOffset] = useState(0);
 
   const ym = useMemo(() => (t ? addMonths(t.y, t.m, offset) : { y: 1970, m: 1 }), [t, offset]);

@@ -180,3 +180,18 @@ describe('アイコンの色(avatar)', () => {
     }
   });
 });
+
+describe('グループ週間目標の頭打ち', () => {
+  it('1人が週5日を超えてクリアしても、進捗は5で頭打ち', async () => {
+    const me = await db.signup('cap1');
+    const gid = await db.as(me).rpc('create_group', 'cap');
+    await db.admin("update group_members set joined_at = now() - interval '14 days' where group_id = $1", [gid]);
+    await db.admin(
+      `insert into daily_completions (user_id, completed_date, must_total, streak_count)
+       select $1, date_trunc('week', public._user_today($1))::date + g, 1, g + 1 from generate_series(0, 6) g`,
+      [me],
+    );
+    const d = await db.as(me).rpc('get_group_detail', gid);
+    expect(d.week).toMatchObject({ target: 5, progress: 5 });
+  });
+});

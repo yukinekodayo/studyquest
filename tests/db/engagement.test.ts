@@ -130,3 +130,49 @@ describe('学習時間の集計 get_study_summary', () => {
     expect((await db.as(a).rpc('get_study_summary')).today_minutes).toBe(12);
   });
 });
+
+describe('監査修正', () => {
+  it('作成→手動完了→削除を繰り返しても、手動XPは1日50XPで頭打ち', async () => {
+    const u = await db.signup('xpfarm');
+    let total = 0;
+    for (let i = 0; i < 15; i++) {
+      const id = await addTask(u, `F${i}`, 20);
+      total += (await db.as(u).rpc('complete_task', id)).xp_gained;
+      await db.as(u).q('delete from tasks where id = $1', [id]);
+    }
+    expect(total).toBe(50);
+    const [{ xp }] = await db.as(u).q('select xp from user_stats where user_id = $1', [u]);
+    expect(xp).toBe(50 + 50); // 手動XP上限 + 1日クリアボーナス(1日1回)
+  });
+
+  it('開始→即完了→削除の連打は1XPも稼げない(実学習60秒未満はXP 0)', async () => {
+    const u = await db.signup('sessfarm');
+    for (let i = 0; i < 5; i++) {
+      const id = await addTask(u, `S${i}`, 20);
+      await db.as(u).rpc('start_session', id);
+      expect((await db.as(u).rpc('complete_task', id)).xp_gained).toBe(0);
+      await db.as(u).q('delete from tasks where id = $1', [id]);
+    }
+    const [{ xp }] = await db.as(u).q('select xp from user_stats where user_id = $1', [u]);
+    expect(xp).toBe(50); // 1日クリアボーナスのみ(セッション由来のXPは0)
+  });
+
+  it('60秒以上学習すればXPが入る / manual_xp_daily はクライアントから見えない', async () => {
+    const u = await db.signup('sessok');
+    const id = await addTask(u, 'ok', 20);
+    const s = await db.as(u).rpc('start_session', id);
+    await db.admin("update study_sessions set run_started_at = now() - interval '90 seconds' where id = $1", [s.id]);
+    expect((await db.as(u).rpc('complete_task', id)).xp_gained).toBe(2);
+    await expect(db.as(u).q('select * from manual_xp_daily')).rejects.toThrow(/permission denied/);
+  });
+
+  it('内部ヘルパーは他人同士の関係を答えず、_user_today は直接呼べない', async () => {
+    const a = await db.signup('hlpa');
+    const b = await db.signup('hlpb');
+    const c = await db.signup('hlpc');
+    await db.admin('insert into friendships (user_a, user_b) values (least($1::uuid,$2::uuid), greatest($1::uuid,$2::uuid))', [b, c]);
+    expect(await db.as(a).rpc('are_friends', b, c)).toBe(false);
+    expect(await db.as(b).rpc('are_friends', b, c)).toBe(true);
+    await expect(db.as(a).rpc('_user_today', b)).rejects.toThrow();
+  });
+});
