@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { respondFriendRequest } from '@/api/friends';
+import { respondGroupInvite } from '@/api/groups';
 import type { ReactionKind } from '@/types/database';
 import { Avatar } from '@/ui/Avatar';
 import { Button } from '@/ui/Button';
@@ -9,7 +10,7 @@ import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { useRun } from '@/ui/Toast';
 import { colors } from '@/ui/theme';
-import { useIncomingRequests, useReceivedReactions, useStats } from './hooks';
+import { useIncomingRequests, useMyGroups, useReceivedReactions, useStats } from './hooks';
 
 export const REACTIONS: Array<{ kind: ReactionKind; emoji: string; label: string }> = [
   { kind: 'clap', emoji: '👏', label: 'すごい' },
@@ -25,17 +26,27 @@ export function NotificationsSheet({ visible, onClose }: { visible: boolean; onC
   const stats = useStats();
   const requests = useIncomingRequests();
   const reactions = useReceivedReactions(stats.data?.today);
+  const groups = useMyGroups();
   const reqs = requests.data ?? [];
   const cheers = reactions.data ?? [];
+  const invites = groups.data?.invites ?? [];
 
   const respond = async (id: string, accept: boolean) => {
     await run(() => respondFriendRequest(id, accept));
     await qc.invalidateQueries();
   };
 
+  const respondInvite = async (groupId: string, accept: boolean) => {
+    const ok = await run(async () => {
+      await respondGroupInvite(groupId, accept);
+      return true;
+    });
+    if (ok) await qc.invalidateQueries();
+  };
+
   return (
     <Sheet visible={visible} title="お知らせ" onClose={onClose}>
-      {reqs.length === 0 && cheers.length === 0 ? (
+      {reqs.length === 0 && cheers.length === 0 && invites.length === 0 ? (
         <Text variant="body" color={colors.inkSoft} align="center">新しいお知らせはありません</Text>
       ) : null}
       {reqs.map((r) => (
@@ -47,6 +58,16 @@ export function NotificationsSheet({ visible, onClose }: { visible: boolean; onC
           </View>
           <Button label="承認" size="sm" onPress={() => respond(r.id, true)} />
           <Button label="見送る" size="sm" variant="ghost" onPress={() => respond(r.id, false)} />
+        </View>
+      ))}
+      {invites.map((inv) => (
+        <View key={inv.group_id} style={styles.row}>
+          <View style={styles.grow}>
+            <Text variant="bodyBold">「{inv.name}」に招待されています</Text>
+            {inv.invited_by ? <Text variant="caption">{inv.invited_by}さんから</Text> : null}
+          </View>
+          <Button label="参加" size="sm" onPress={() => respondInvite(inv.group_id, true)} />
+          <Button label="見送る" size="sm" variant="ghost" onPress={() => respondInvite(inv.group_id, false)} />
         </View>
       ))}
       {cheers.length > 0 ? (

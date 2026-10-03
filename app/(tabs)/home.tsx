@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { TaskMark } from '@/features/TaskParts';
 import { useStartTask } from '@/features/actions';
-import { useFriends, useIncomingRequests, useProfile, useReceivedReactions, useRefetchOnFocus, useStats, useStudySummary, useTodayTasks } from '@/features/hooks';
+import { useFriends, useIncomingRequests, useMyGroups, useProfile, useReceivedReactions, useRefetchOnFocus, useStats, useStudySummary, useTodayTasks } from '@/features/hooks';
 import { WeeklyStudyCard } from '@/features/WeeklyStudyCard';
 import { greetingFor, remainingLabel } from '@/domain/messages';
 import { Flame } from '@/ui/Flame';
@@ -34,6 +34,7 @@ export default function HomeScreen() {
   const study = useStudySummary();
   const requests = useIncomingRequests();
   const reactions = useReceivedReactions(stats.data?.today);
+  const groups = useMyGroups();
   const startTask = useStartTask();
   const [bell, setBell] = useState(false);
 
@@ -58,7 +59,7 @@ export default function HomeScreen() {
   const next = pickNextTask(list);
   const nickname = profile.data?.nickname ?? '';
   const others = (friends.data ?? []).filter((f) => !f.is_me);
-  const notifCount = (requests.data?.length ?? 0) + (reactions.data?.length ?? 0);
+  const notifCount = (requests.data?.length ?? 0) + (reactions.data?.length ?? 0) + (groups.data?.invites.length ?? 0);
   const rewardStreak = streakIfClearedToday(s.current_streak);
   const rewardStamp = stampForStreak(rewardStreak);
 
