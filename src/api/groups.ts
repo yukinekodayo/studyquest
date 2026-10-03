@@ -16,3 +16,5 @@ export const respondGroupInvite = (groupId: string, accept: boolean): Promise<vo
   rpc('respond_group_invite', { p_group: groupId, p_accept: accept }).then(() => undefined);
 export const leaveGroup = (groupId: string): Promise<void> =>
   rpc('leave_group', { p_group: groupId }).then(() => undefined);
+export const deleteGroup = (groupId: string): Promise<void> =>
+  rpc('delete_group', { p_group: groupId }).then(() => undefined);

@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { inviteToGroup, leaveGroup } from '@/api/groups';
+import { deleteGroup, inviteToGroup, leaveGroup } from '@/api/groups';
 import { daysLeftLabel } from '@/domain/groups';
 import { useFriends, useGroupDetail, useRefetchOnFocus } from '@/features/hooks';
 import { haptic } from '@/lib/haptics';
@@ -31,6 +31,7 @@ export default function GroupDetailScreen() {
   const friends = useFriends();
   const [inviting, setInviting] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   useRefetchOnFocus(detail.refetch);
 
   const back = () => (router.canGoBack() ? router.back() : router.navigate('/groups'));
@@ -69,6 +70,18 @@ export default function GroupDetailScreen() {
     });
     if (ok) {
       setLeaving(false);
+      await qc.invalidateQueries();
+      router.navigate('/groups');
+    }
+  };
+
+  const remove = async () => {
+    const ok = await run(async () => {
+      await deleteGroup(g.id);
+      return true;
+    });
+    if (ok) {
+      setDeleting(false);
       await qc.invalidateQueries();
       router.navigate('/groups');
     }
@@ -141,6 +154,7 @@ export default function GroupDetailScreen() {
       </FadeIn>
 
       <Button label="このグループをぬける" variant="ghost" size="md" onPress={() => setLeaving(true)} testID="group-leave" />
+      {g.is_owner ? <Button label="このグループを削除" variant="ghost" size="md" onPress={() => setDeleting(true)} testID="group-delete" /> : null}
 
       <Sheet visible={inviting} title="フレンドを招待" onClose={() => setInviting(false)}>
         {invitable.length === 0 ? <Text variant="body" color={colors.inkSoft}>招待できるフレンドがいません。まずフレンドを追加しましょう</Text> : invitable.map((f) => (
@@ -155,6 +169,11 @@ export default function GroupDetailScreen() {
         <Text variant="body">「{g.name}」をぬけますか？ あとからまた招待してもらえます。</Text>
         <Button label="ぬける" variant="danger" onPress={leave} testID="group-leave-confirm" />
         <Button label="やめる" variant="soft" size="md" onPress={() => setLeaving(false)} />
+      </Sheet>
+      <Sheet visible={deleting} title="グループを削除" onClose={() => setDeleting(false)}>
+        <Text variant="body">「{g.name}」を削除しますか？ メンバー全員のグループからも消え、元に戻せません。</Text>
+        <Button label="削除する" variant="danger" onPress={remove} testID="group-delete-confirm" />
+        <Button label="やめる" variant="soft" size="md" onPress={() => setDeleting(false)} />
       </Sheet>
     </Screen>
   );

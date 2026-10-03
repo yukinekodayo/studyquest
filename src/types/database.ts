@@ -250,6 +250,7 @@ export type Database = {
       invite_to_group: { Args: { p_group: string; p_user: string }; Returns: undefined };
       respond_group_invite: { Args: { p_group: string; p_accept: boolean }; Returns: undefined };
       leave_group: { Args: { p_group: string }; Returns: undefined };
+      delete_group: { Args: { p_group: string }; Returns: undefined };
       my_groups: { Args: Empty; Returns: MyGroups };
       get_group_detail: { Args: { p_group: string }; Returns: GroupDetail };
       delete_my_account: { Args: Empty; Returns: undefined };

@@ -112,6 +112,20 @@ describe('グループ / 協力チャレンジ', () => {
     expect(await db.admin('select * from groups where id = $1', [gid])).toHaveLength(0);
   });
 
+  it('グループ削除はオーナーだけができ、メンバー行も消える', async () => {
+    const me = await db.signup('a');
+    const b = await db.signup('b');
+    await makeFriends(me, b);
+    const gid = await db.as(me).rpc('create_group', '削除');
+    await db.as(me).rpc('invite_to_group', gid, b);
+    await db.as(b).rpc('respond_group_invite', gid, true);
+    expect(await errorOf(db.as(b).rpc('delete_group', gid))).toContain('SQ_NOT_GROUP_OWNER');
+    await db.as(me).rpc('delete_group', gid);
+    expect(await db.admin('select * from groups where id = $1', [gid])).toHaveLength(0);
+    expect(await db.admin('select * from group_members where group_id = $1', [gid])).toHaveLength(0);
+    expect(await errorOf(db.as(me).rpc('delete_group', gid))).toContain('SQ_GROUP_NOT_FOUND');
+  });
+
   it('入力検証: 空/長い名前、定員10人', async () => {
     const me = await db.signup('a');
     expect(await errorOf(db.as(me).rpc('create_group', '   '))).toContain('SQ_INVALID_INPUT');
