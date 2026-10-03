@@ -3,8 +3,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { deleteGroup, inviteToGroup, leaveGroup } from '@/api/groups';
-import { daysLeftLabel } from '@/domain/groups';
+import { deleteGroup, inviteToGroup, leaveGroup, proposeGroupTarget, respondGroupTarget } from '@/api/groups';
+import { GROUP_TARGET_OPTIONS, streakHint } from '@/domain/groups';
 import { useFriends, useGroupDetail, useRefetchOnFocus } from '@/features/hooks';
 import { haptic } from '@/lib/haptics';
 import { Avatar } from '@/ui/Avatar';
@@ -20,7 +20,7 @@ import { Text } from '@/ui/Text';
 import { useRun, useToast } from '@/ui/Toast';
 import { colors } from '@/ui/theme';
 
-/** グループ詳細: 今週の協力クエスト(個人ランキングではなく、みんなで目標達成) */
+/** グループ詳細: みんなで◯日連続(個人ランキングではなく、みんなで目標達成) */
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -32,6 +32,7 @@ export default function GroupDetailScreen() {
   const [inviting, setInviting] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [changing, setChanging] = useState(false);
   useRefetchOnFocus(detail.refetch);
 
   const back = () => (router.canGoBack() ? router.back() : router.navigate('/groups'));
@@ -46,10 +47,10 @@ export default function GroupDetailScreen() {
 
   const g = detail.data;
   const me = g.members.find((m) => m.is_me);
-  const reached = g.week.progress >= g.week.target;
+  const reached = g.streak.reached;
   const memberIds = new Set([...g.members.map((m) => m.user_id), ...g.pending_invites.map((p) => p.user_id)]);
   const invitable = (friends.data ?? []).filter((f) => !f.is_me && !memberIds.has(f.user_id));
-  const pills = g.week.target <= 30;
+  const pills = g.streak.target <= 30;
 
   const invite = async (userId: string, nickname: string) => {
     const ok = await run(async () => {
@@ -75,6 +76,29 @@ export default function GroupDetailScreen() {
     }
   };
 
+  const propose = async (days: number) => {
+    const ok = await run(async () => {
+      await proposeGroupTarget(g.id, days);
+      return true;
+    });
+    if (ok) {
+      setChanging(false);
+      toast.show('目標の変更を提案しました。全員が賛成すると変わります', 'success');
+      await qc.invalidateQueries();
+    }
+  };
+
+  const respondTarget = async (accept: boolean) => {
+    const ok = await run(async () => {
+      await respondGroupTarget(g.id, accept);
+      return true;
+    });
+    if (ok) {
+      haptic.success();
+      await qc.invalidateQueries();
+    }
+  };
+
   const remove = async () => {
     const ok = await run(async () => {
       await deleteGroup(g.id);
@@ -93,7 +117,7 @@ export default function GroupDetailScreen() {
         {backBtn}
         <View style={styles.grow}>
           <Text variant="title" size={22} numberOfLines={1} testID="group-title">{g.name}</Text>
-          <Text variant="caption">{g.members.length}人 ・ {daysLeftLabel(g.week.days_left)}</Text>
+          <Text variant="caption">{g.members.length}人 ・ 目標 {g.streak.target}日連続</Text>
         </View>
         <Pressable onPress={() => setInviting(true)} style={styles.back} accessibilityRole="button" accessibilityLabel="フレンドを招待" testID="group-invite">
           <Ionicons name="person-add-outline" size={22} color={colors.ink} />
@@ -102,30 +126,42 @@ export default function GroupDetailScreen() {
 
       <FadeIn index={0}>
         <Card style={styles.quest}>
-          <Text variant="label" color={colors.blue}>今週の協力クエスト</Text>
-          <Text variant="title" size={20} style={styles.questTitle}>みんなで{g.week.target}日分の{'\n'}デイリークリアを達成しよう</Text>
+          <Text variant="label" color={colors.blue}>みんなで連続クリア</Text>
+          <Text variant="title" size={20} style={styles.questTitle}>だれかが毎日クリアして{'\n'}{g.streak.target}日連続を目指そう</Text>
           <View style={styles.numRow}>
-            <Text variant="num" size={56} color={colors.blue} testID="group-progress">{g.week.progress}<Text variant="numMedium" size={17} color={colors.inkSoft}> / {g.week.target}日分</Text></Text>
+            <Text variant="num" size={56} color={colors.blue} testID="group-progress">{g.streak.current}<Text variant="numMedium" size={17} color={colors.inkSoft}> / {g.streak.target}日連続</Text></Text>
             <View style={styles.teamStamp}>
               <Stamp type="team" size={56} locked={!reached} />
               <Text variant="caption" size={10} align="center">{reached ? '協力ハンコ獲得' : '達成すると\n協力ハンコ'}</Text>
             </View>
           </View>
           {pills ? (
-            <ProgressSegments total={g.week.target} done={g.week.progress} height={6} gap={3} />
+            <ProgressSegments total={g.streak.target} done={Math.min(g.streak.current, g.streak.target)} height={6} gap={3} />
           ) : (
-            <View style={styles.bar}><View style={[styles.barFill, { width: `${Math.min(100, (g.week.progress / g.week.target) * 100)}%` }]} /></View>
+            <View style={styles.bar}><View style={[styles.barFill, { width: `${Math.min(100, (g.streak.current / g.streak.target) * 100)}%` }]} /></View>
           )}
-          {reached ? (
-            <Text variant="bodyBold" color={colors.green} size={14} testID="group-hint">みんなの力で、今週の協力クエストを達成しました</Text>
-          ) : me?.cleared ? (
-            <Text variant="bodyBold" color={colors.green} size={14} testID="group-hint">今日はもうクリアしました。ナイスです</Text>
+          {reached || g.streak.cleared_today ? (
+            <Text variant="bodyBold" color={colors.green} size={14} testID="group-hint">{streakHint(g.streak.current, g.streak.target, reached, g.streak.cleared_today)}</Text>
           ) : (
             <View style={styles.hintRow} testID="group-hint">
               <Ionicons name="checkmark" size={16} color={colors.blue} />
-              <Text variant="bodyBold" color={colors.blue} size={14}>あなたが今日クリアすると {g.week.progress + 1} / {g.week.target} になります</Text>
+              <Text variant="bodyBold" color={colors.blue} size={14}>{streakHint(g.streak.current, g.streak.target, reached, false)}</Text>
             </View>
           )}
+          <Button label="目標の日数を変える" variant="ghost" size="sm" onPress={() => setChanging(true)} testID="group-target-change" />
+          {g.proposal ? (
+            <View style={styles.proposal} testID="group-proposal">
+              <Text variant="bodyBold" size={14}>{g.proposal.proposed_by ?? 'メンバー'}さんが目標を{g.proposal.target_days}日連続に変える提案中({g.proposal.approved_count}/{g.proposal.member_count}人が賛成)</Text>
+              {g.proposal.approved_by_me ? (
+                <Text variant="caption">ほかのメンバーの返事を待っています</Text>
+              ) : (
+                <View style={styles.hintRow}>
+                  <Button label="賛成" size="sm" onPress={() => respondTarget(true)} testID="group-target-accept" />
+                  <Button label="反対" size="sm" variant="soft" onPress={() => respondTarget(false)} testID="group-target-reject" />
+                </View>
+              )}
+            </View>
+          ) : null}
         </Card>
       </FadeIn>
 
@@ -165,6 +201,14 @@ export default function GroupDetailScreen() {
           </View>
         ))}
       </Sheet>
+      <Sheet visible={changing} title="目標の日数を変える" onClose={() => setChanging(false)}>
+        <Text variant="body">メンバー全員が賛成すると、新しい目標に変わります。</Text>
+        <View style={styles.hintRow}>
+          {GROUP_TARGET_OPTIONS.filter((n) => n !== g.streak.target).map((n) => (
+            <Button key={n} label={`${n}日`} size="sm" variant="soft" onPress={() => propose(n)} testID={`propose-${n}`} />
+          ))}
+        </View>
+      </Sheet>
       <Sheet visible={leaving} title="グループをぬける" onClose={() => setLeaving(false)}>
         <Text variant="body">「{g.name}」をぬけますか？ あとからまた招待してもらえます。</Text>
         <Button label="ぬける" variant="danger" onPress={leave} testID="group-leave-confirm" />
@@ -189,6 +233,7 @@ const styles = StyleSheet.create({
   teamStamp: { alignItems: 'center', gap: 2, width: 76 },
   bar: { height: 6, borderRadius: 3, backgroundColor: colors.track, overflow: 'hidden' },
   barFill: { height: 6, borderRadius: 3, backgroundColor: colors.blue },
+  proposal: { gap: 6, paddingTop: 4 },
   hintRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   membersTitle: { marginBottom: 6 },
   memberRow: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 58 },

@@ -105,7 +105,7 @@ await tid(a.page, 'group-name-input').fill('テスト前がんばる会');
 await tid(a.page, 'group-create-submit').click();
 await a.page.waitForURL(/\/groups\/[0-9a-f-]{36}/, { timeout: 15000 });
 await tid(a.page, 'group-title').waitFor();
-check(norm(await tid(a.page, 'group-progress').textContent()).startsWith('0 / 5'), '協力クエスト 0 / 5日分(1人×5日)');
+check(norm(await tid(a.page, 'group-progress').textContent()).startsWith('0 / 7'), '協力チャレンジ 0 / 7日連続(初期目標7日)');
 await tid(a.page, 'group-invite').click();
 await tid(a.page, 'invite-はる').click();
 await a.page.getByText('招待しました').waitFor({ timeout: 10000 });
@@ -142,8 +142,8 @@ check((await tid(b.page, 'pending-banner').count()) === 0, 'ハンコ帳から�
 await a.page.goto(`${BASE}/groups`, { waitUntil: 'domcontentloaded' });
 await tid(a.page, 'group-テスト前がんばる会').click();
 await tid(a.page, 'group-progress').waitFor({ timeout: 20000 });
-check(norm(await tid(a.page, 'group-progress').textContent()).startsWith('1 / 10'), 'ゆうき側の進捗が 1 / 10日分(2人×5日)');
-check(norm(await tid(a.page, 'group-hint').textContent()).includes('2 / 10'), '「あなたが今日クリアすると 2 / 10」');
+check(norm(await tid(a.page, 'group-progress').textContent()).startsWith('1 / 7'), 'ゆうき側の連続が 1 / 7日連続(はるがクリア済み)');
+check(norm(await tid(a.page, 'group-hint').textContent()).includes('1日連続'), '今日はもうチームでクリア済みの案内');
 check(norm(await tid(a.page, 'gmember-はる').textContent()).includes('クリア'), 'メンバーはるは「クリア！」');
 await shot(a.page, '26-group-detail');
 

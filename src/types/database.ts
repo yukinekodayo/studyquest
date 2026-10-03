@@ -159,18 +159,24 @@ export interface PartyRoom {
   members: PartyMember[];
 }
 
-export interface GroupWeek {
+export interface GroupStreak {
   target: number;
-  progress: number;
-  starts_on: string;
-  ends_on: string;
-  days_left: number;
+  current: number;
+  reached: boolean;
+  cleared_today: boolean;
+}
+export interface GroupTargetProposal {
+  target_days: number;
+  proposed_by: string | null;
+  approved_by_me: boolean;
+  approved_count: number;
+  member_count: number;
 }
 export interface GroupSummary {
   id: string;
   name: string;
   member_count: number;
-  week: GroupWeek;
+  streak: GroupStreak;
 }
 export interface GroupInvite {
   group_id: string;
@@ -195,7 +201,8 @@ export interface GroupDetail {
   id: string;
   name: string;
   is_owner: boolean;
-  week: GroupWeek;
+  streak: GroupStreak;
+  proposal: GroupTargetProposal | null;
   members: GroupMember[];
   pending_invites: Array<{ user_id: string; nickname: string; avatar: AvatarKey }>;
 }
@@ -246,10 +253,12 @@ export type Database = {
       friends_overview: { Args: Empty; Returns: FriendOverviewRow[] };
       study_party_rooms: { Args: Empty; Returns: PartyRoom[] };
       join_study_party: { Args: { p_subject: string }; Returns: { task_id: string; session: SessionState } };
-      create_group: { Args: { p_name: string }; Returns: string };
+      create_group: { Args: { p_name: string; p_target_days?: number }; Returns: string };
       invite_to_group: { Args: { p_group: string; p_user: string }; Returns: undefined };
       respond_group_invite: { Args: { p_group: string; p_accept: boolean }; Returns: undefined };
       leave_group: { Args: { p_group: string }; Returns: undefined };
+      propose_group_target: { Args: { p_group: string; p_days: number }; Returns: undefined };
+      respond_group_target: { Args: { p_group: string; p_accept: boolean }; Returns: undefined };
       delete_group: { Args: { p_group: string }; Returns: undefined };
       my_groups: { Args: Empty; Returns: MyGroups };
       get_group_detail: { Args: { p_group: string }; Returns: GroupDetail };

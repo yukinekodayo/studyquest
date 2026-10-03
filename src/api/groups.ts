@@ -5,10 +5,10 @@ import { ValidationError } from './auth';
 export const fetchMyGroups = () => rpc('my_groups');
 export const fetchGroupDetail = (id: string) => rpc('get_group_detail', { p_group: id });
 
-export async function createGroup(name: string): Promise<string> {
+export async function createGroup(name: string, targetDays: number): Promise<string> {
   const parsed = groupNameSchema.safeParse(name);
   if (!parsed.success) throw new ValidationError(firstIssue(parsed.error));
-  return rpc('create_group', { p_name: parsed.data });
+  return rpc('create_group', { p_name: parsed.data, p_target_days: targetDays });
 }
 export const inviteToGroup = (groupId: string, userId: string): Promise<void> =>
   rpc('invite_to_group', { p_group: groupId, p_user: userId }).then(() => undefined);
@@ -18,3 +18,7 @@ export const leaveGroup = (groupId: string): Promise<void> =>
   rpc('leave_group', { p_group: groupId }).then(() => undefined);
 export const deleteGroup = (groupId: string): Promise<void> =>
   rpc('delete_group', { p_group: groupId }).then(() => undefined);
+export const proposeGroupTarget = (groupId: string, days: number): Promise<void> =>
+  rpc('propose_group_target', { p_group: groupId, p_days: days }).then(() => undefined);
+export const respondGroupTarget = (groupId: string, accept: boolean): Promise<void> =>
+  rpc('respond_group_target', { p_group: groupId, p_accept: accept }).then(() => undefined);
