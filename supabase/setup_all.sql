@@ -1539,10 +1539,10 @@ grant execute on function public.delete_group(uuid) to authenticated;
 -- グループの協力チャレンジを「週◯日分」から「みんなで◯日連続」に変更
 -- メンバーの誰か1人でもその日のデイリーをクリアした日は「連続」が続く。目標日数はメンバー全員の同意で変更する。
 
-alter table public.groups add column target_days int not null default 7 check (target_days between 1 and 365);
+alter table public.groups add column if not exists target_days int not null default 7 check (target_days between 1 and 365);
 
 -- 目標変更の提案(グループごとに1件)。approvals に賛成したメンバーの user_id を持つ
-create table public.group_target_proposals (
+create table if not exists public.group_target_proposals (
   group_id    uuid primary key references public.groups(id) on delete cascade,
   target_days int not null check (target_days between 1 and 365),
   proposed_by uuid not null references public.profiles(id) on delete cascade,
@@ -1590,7 +1590,7 @@ $$;
 -- 全員(参加中のメンバー)が賛成していたら目標を反映して提案を閉じる
 create or replace function public._apply_group_target(p_group uuid) returns void
 language plpgsql security definer set search_path = public, pg_temp as $$
-declare pr public.group_target_proposals;
+declare pr record;
 begin
   select * into pr from public.group_target_proposals where group_id = p_group;
   if not found then return; end if;
