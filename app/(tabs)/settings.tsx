@@ -6,7 +6,9 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { deleteMyAccount, signOut } from '@/api/auth';
 import { AVATARS, NICKNAME_MAX, nicknameSchema, firstIssue, type AvatarKey } from '@/domain/validation';
-import { useProfile, useUpdateProfile } from '@/features/hooks';
+import { unblockUser } from '@/api/chat';
+import { ChatRulesSheet } from '@/features/chat/ChatRules';
+import { useBlocks, useIsAdmin, useProfile, useUpdateProfile } from '@/features/hooks';
 import { haptic } from '@/lib/haptics';
 import { Avatar } from '@/ui/Avatar';
 import { Button } from '@/ui/Button';
@@ -26,6 +28,9 @@ export default function SettingsScreen() {
   const qc = useQueryClient();
   const profile = useProfile();
   const update = useUpdateProfile();
+  const blocks = useBlocks();
+  const isAdmin = useIsAdmin();
+  const [rulesOpen, setRulesOpen] = useState(false);
   const [nickname, setNickname] = useState('');
   const [avatar, setAvatar] = useState<AvatarKey>('blue');
   const [error, setError] = useState<string | null>(null);
@@ -129,6 +134,32 @@ export default function SettingsScreen() {
       </Card>
 
       <Card style={styles.card}>
+        <Text variant="heading" size={16}>チャット</Text>
+        <Button label="安心して使うためのルール" variant="soft" size="md" icon="shield-checkmark-outline" onPress={() => setRulesOpen(true)} testID="open-chat-rules" />
+        <Text variant="label">ブロックした人</Text>
+        {(blocks.data ?? []).length === 0 ? (
+          <Text variant="caption" testID="no-blocks">ブロックしている人はいません</Text>
+        ) : (
+          (blocks.data ?? []).map((b) => (
+            <View key={b.user_id} style={styles.blockRow} testID={`blocked-${b.nickname}`}>
+              <Avatar name={b.nickname} color={b.avatar} size={40} />
+              <Text variant="bodyBold" size={15} style={styles.grow}>{b.nickname}</Text>
+              <Button label="解除" size="sm" variant="soft" onPress={async () => { const ok = await run(async () => { await unblockUser(b.user_id); return true; }); if (ok) await qc.invalidateQueries({ queryKey: ['chat'] }); }} testID={`unblock-${b.nickname}`} />
+            </View>
+          ))
+        )}
+      </Card>
+
+      {isAdmin.data ? (
+        <Card style={styles.card}>
+          <Text variant="heading" size={16}>運営</Text>
+          <Button label="通報の確認" icon="flag-outline" variant="soft" onPress={() => router.push('/admin')} testID="open-admin" />
+        </Card>
+      ) : null}
+
+      <ChatRulesSheet visible={rulesOpen} onClose={() => setRulesOpen(false)} />
+
+      <Card style={styles.card}>
         <Button label="ログアウト" variant="soft" icon="log-out-outline" onPress={logout} testID="logout" />
         {confirmDelete ? (
           <View style={styles.danger}>
@@ -156,6 +187,7 @@ const styles = StyleSheet.create({
   code: { letterSpacing: 3 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   grow: { flex: 1 },
+  blockRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   danger: { gap: 10, backgroundColor: colors.redSoft, borderRadius: 16, padding: 12 },
   row: { flexDirection: 'row', gap: 10 },
 });

@@ -8,7 +8,7 @@ import { pickNextTask } from '@/domain/quest';
 import { AddFriendSheet } from '@/features/AddFriendSheet';
 import { FriendsTabs } from '@/features/FriendsTabs';
 import { REACTIONS } from '@/features/NotificationsSheet';
-import { useFriends, usePartyRooms, useRefetchOnFocus, useTodayTasks } from '@/features/hooks';
+import { useChatUnread, useFriends, usePartyRooms, useRefetchOnFocus, useTodayTasks } from '@/features/hooks';
 import { haptic } from '@/lib/haptics';
 import type { FriendOverviewRow, ReactionKind } from '@/types/database';
 import { Avatar } from '@/ui/Avatar';
@@ -32,6 +32,7 @@ export default function FriendsScreen() {
   const friends = useFriends();
   const rooms = usePartyRooms();
   const myTasks = useTodayTasks();
+  const unread = useChatUnread();
   const [adding, setAdding] = useState(false);
   const [openReact, setOpenReact] = useState<string | null>(null);
   const [removing, setRemoving] = useState<FriendOverviewRow | null>(null);
@@ -156,9 +157,15 @@ export default function FriendsScreen() {
                       <Ionicons name={f.my_reactions.length > 0 ? 'heart' : 'heart-outline'} size={16} color={colors.blue} />
                       <Text variant="bodyBold" size={14} color={colors.blue}>{f.cleared ? 'お祝い' : '応援する'}</Text>
                     </PressableScale>
-                    <PressableScale onPress={() => setRemoving(f)} style={styles.more} accessibilityRole="button" accessibilityLabel={`${f.nickname}さんの設定`}>
-                      <Ionicons name="ellipsis-horizontal" size={18} color={colors.inkFaint} />
-                    </PressableScale>
+                    <View style={styles.sideRow}>
+                      <PressableScale onPress={() => router.push(`/chat/dm/${f.user_id}`)} style={styles.chatBtn} accessibilityRole="button" accessibilityLabel={`${f.nickname}さんとメッセージ`} testID={`chat-${f.nickname}`} feedback>
+                        <Ionicons name="chatbubble-ellipses-outline" size={20} color={colors.ink} />
+                        {(unread.data?.dms[f.user_id] ?? 0) > 0 ? <View style={styles.unreadDot} testID={`unread-${f.nickname}`} /> : null}
+                      </PressableScale>
+                      <PressableScale onPress={() => setRemoving(f)} style={styles.more} accessibilityRole="button" accessibilityLabel={`${f.nickname}さんの設定`}>
+                        <Ionicons name="ellipsis-horizontal" size={18} color={colors.inkFaint} />
+                      </PressableScale>
+                    </View>
                   </View>
                 </View>
                 {openReact === f.user_id ? (
@@ -236,7 +243,10 @@ const styles = StyleSheet.create({
   friendRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   side: { alignItems: 'flex-end', gap: 2 },
   cheerBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 44, paddingHorizontal: 14, borderRadius: radius.md, backgroundColor: colors.blueSoft },
-  more: { width: 40, height: 28, alignItems: 'center', justifyContent: 'center' },
+  more: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  sideRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  chatBtn: { width: 40, height: 36, alignItems: 'center', justifyContent: 'center' },
+  unreadDot: { position: 'absolute', top: 4, right: 6, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.red, borderWidth: 1.5, borderColor: colors.white },
   streak: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   statusDot: { width: 7, height: 7, borderRadius: 4 },

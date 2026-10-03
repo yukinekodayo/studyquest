@@ -101,6 +101,40 @@ export interface StudySummary {
   total_minutes: number;
 }
 
+export interface ChatMessage {
+  id: string;
+  body: string;
+  kind: 'text' | 'quick';
+  created_at: string;
+  sender_id: string;
+  is_mine: boolean;
+  nickname: string;
+  avatar: AvatarKey;
+}
+export interface ChatUnread {
+  groups: Record<string, number>;
+  dms: Record<string, number>;
+}
+export interface BlockedUser {
+  user_id: string;
+  nickname: string;
+  avatar: AvatarKey;
+}
+export type ReportReason = 'abuse' | 'bullying' | 'personal_info' | 'spam' | 'other';
+export interface AdminReport {
+  id: string;
+  reason: ReportReason;
+  note: string | null;
+  created_at: string;
+  body: string;
+  sender_id: string;
+  sender_nickname: string;
+  reporter_nickname: string;
+  group_name: string | null;
+  report_count: number;
+  hidden: boolean;
+}
+
 export type AchievementRow = { user_id: string; code: string; unlocked_at: string };
 
 export interface ClaimStampResult {
@@ -253,6 +287,17 @@ export type Database = {
       my_groups: { Args: Empty; Returns: MyGroups };
       get_group_detail: { Args: { p_group: string }; Returns: GroupDetail };
       delete_my_account: { Args: Empty; Returns: undefined };
+      is_admin: { Args: Empty; Returns: boolean };
+      send_message: { Args: { p_group: string | null; p_user: string | null; p_body: string; p_quick: boolean }; Returns: ChatMessage };
+      get_messages: { Args: { p_group: string | null; p_user: string | null; p_before: string | null; p_limit: number }; Returns: ChatMessage[] };
+      mark_chat_read: { Args: { p_group: string | null; p_user: string | null }; Returns: undefined };
+      chat_unread: { Args: Empty; Returns: ChatUnread };
+      block_user: { Args: { p_user: string }; Returns: undefined };
+      unblock_user: { Args: { p_user: string }; Returns: undefined };
+      my_blocks: { Args: Empty; Returns: BlockedUser[] };
+      report_message: { Args: { p_message_id: string; p_reason: ReportReason; p_note: string | null }; Returns: { ok: boolean; newly_reported: boolean } };
+      admin_open_reports: { Args: Empty; Returns: AdminReport[] };
+      admin_resolve_report: { Args: { p_report_id: string; p_action: 'dismiss' | 'hide' | 'hide_mute' }; Returns: undefined };
     };
     Enums: Empty;
     CompositeTypes: Empty;

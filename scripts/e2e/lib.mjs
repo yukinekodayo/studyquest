@@ -1,4 +1,5 @@
 // E2E 共通: スマホ幅のChromiumでアプリ(Expo Web)を操作する
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import { chromium } from 'playwright-core';
 
@@ -11,8 +12,8 @@ export async function launch() {
   return chromium.launch({ executablePath });
 }
 
-export async function newUser(browser, label) {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
+export async function newUser(browser, label, opts = {}) {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'ja-JP', timezoneId: opts.timezoneId ?? 'Asia/Tokyo' });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(`[${label}] pageerror: ${e.message}`));
@@ -58,3 +59,13 @@ export function check(cond, msg) {
   }
 }
 export const failed = () => failures;
+
+/** ローカルスタックのDBを直接操作する(テスト用の下ごしらえ: 運営アカウントの付与など) */
+export function psql(sql) {
+  return execFileSync('psql', ['-h', '127.0.0.1', '-p', process.env.LOCAL_PG_PORT ?? '54322', '-U', 'postgres', 'studyquest', '-tAc', sql]).toString().trim();
+}
+
+/** いま現地時刻が昼(10〜16時)のタイムゾーン名(夜間制限に左右されないテストのため) */
+export function daytimeZone() {
+  return psql("select name from pg_timezone_names where name ~ '^[A-Z][a-z]+/' and extract(hour from now() at time zone name) between 10 and 16 order by name limit 1");
+}

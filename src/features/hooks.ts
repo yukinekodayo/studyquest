@@ -6,6 +6,7 @@ import { fetchFriendsOverview, fetchIncomingRequests, fetchReceivedReactions } f
 import { fetchGroupDetail, fetchMyGroups } from '@/api/groups';
 import { fetchPartyRooms } from '@/api/party';
 import { getSessionState } from '@/api/sessions';
+import { fetchAdminReports, fetchBlocks, fetchChatUnread, fetchIsAdmin, fetchMessages, type ChatTarget } from '@/api/chat';
 import { fetchAchievements, fetchStampsBetween, getMyStats, getStudySummary } from '@/api/stats';
 import { fetchTask, fetchTodayTasks, reorderTasks } from '@/api/tasks';
 import { clockOffsetMs } from '@/domain/timer';
@@ -18,6 +19,11 @@ export const keys = {
   stats: ['stats'] as const,
   study: ['study'] as const,
   achievements: ['achievements'] as const,
+  chatUnread: ['chat', 'unread'] as const,
+  chat: (key: string) => ['chat', 'messages', key] as const,
+  blocks: ['chat', 'blocks'] as const,
+  isAdmin: ['chat', 'is-admin'] as const,
+  adminReports: ['chat', 'admin-reports'] as const,
   todayTasks: ['tasks', 'today'] as const,
   task: (id: string) => ['task', id] as const,
   session: (taskId: string) => ['session', taskId] as const,
@@ -46,6 +52,14 @@ export function useUpdateProfile() {
 
 export const useStats = () => useQuery({ queryKey: keys.stats, queryFn: getMyStats });
 export const useStudySummary = () => useQuery({ queryKey: keys.study, queryFn: getStudySummary });
+export const chatKey = (t: ChatTarget): string => (t.group ? `g:${t.group}` : `d:${t.user}`);
+/** 開いている間は5秒ごとに新しいメッセージを確認する */
+export const useMessages = (t: ChatTarget) =>
+  useQuery({ queryKey: keys.chat(chatKey(t)), queryFn: () => fetchMessages(t), refetchInterval: 5_000 });
+export const useChatUnread = () => useQuery({ queryKey: keys.chatUnread, queryFn: fetchChatUnread, refetchInterval: 20_000 });
+export const useBlocks = () => useQuery({ queryKey: keys.blocks, queryFn: fetchBlocks });
+export const useIsAdmin = () => useQuery({ queryKey: keys.isAdmin, queryFn: fetchIsAdmin, staleTime: 5 * 60_000 });
+export const useAdminReports = (enabled: boolean) => useQuery({ queryKey: keys.adminReports, queryFn: fetchAdminReports, enabled });
 export const useAchievements = () => useQuery({ queryKey: keys.achievements, queryFn: fetchAchievements });
 export const useTodayTasks = () => useQuery({ queryKey: keys.todayTasks, queryFn: fetchTodayTasks });
 export const useTask = (id: string) => useQuery({ queryKey: keys.task(id), queryFn: () => fetchTask(id), enabled: !!id });

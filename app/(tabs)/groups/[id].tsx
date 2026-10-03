@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { inviteToGroup, leaveGroup } from '@/api/groups';
 import { daysLeftLabel } from '@/domain/groups';
-import { useFriends, useGroupDetail, useRefetchOnFocus } from '@/features/hooks';
+import { useChatUnread, useFriends, useGroupDetail, useRefetchOnFocus } from '@/features/hooks';
 import { haptic } from '@/lib/haptics';
 import { Avatar } from '@/ui/Avatar';
 import { Button } from '@/ui/Button';
@@ -29,6 +29,7 @@ export default function GroupDetailScreen() {
   const qc = useQueryClient();
   const detail = useGroupDetail(id);
   const friends = useFriends();
+  const unread = useChatUnread();
   const [inviting, setInviting] = useState(false);
   const [leaving, setLeaving] = useState(false);
   useRefetchOnFocus(detail.refetch);
@@ -82,6 +83,10 @@ export default function GroupDetailScreen() {
           <Text variant="title" size={22} numberOfLines={1} testID="group-title">{g.name}</Text>
           <Text variant="caption">{g.members.length}人 ・ {daysLeftLabel(g.week.days_left)}</Text>
         </View>
+        <Pressable onPress={() => router.push(`/chat/group/${g.id}`)} style={styles.back} accessibilityRole="button" accessibilityLabel="グループのチャット" testID="group-chat">
+          <Ionicons name="chatbubble-ellipses-outline" size={22} color={colors.ink} />
+          {(unread.data?.groups[g.id] ?? 0) > 0 ? <View style={styles.unreadDot} testID="group-unread" /> : null}
+        </Pressable>
         <Pressable onPress={() => setInviting(true)} style={styles.back} accessibilityRole="button" accessibilityLabel="フレンドを招待" testID="group-invite">
           <Ionicons name="person-add-outline" size={22} color={colors.ink} />
         </Pressable>
@@ -164,6 +169,7 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   grow: { flex: 1 },
   back: { width: 40, height: 44, alignItems: 'center', justifyContent: 'center' },
+  unreadDot: { position: 'absolute', top: 8, right: 4, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.red, borderWidth: 1.5, borderColor: colors.bg },
   quest: { gap: 10 },
   questTitle: { lineHeight: 30 },
   numRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

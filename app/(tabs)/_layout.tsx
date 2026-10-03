@@ -1,6 +1,6 @@
 import { Tabs, useRouter } from 'expo-router';
 import { BottomNav, type NavKey } from '@/ui/BottomNav';
-import { useIncomingRequests, useMyGroups, usePrefetchTabs } from '@/features/hooks';
+import { useChatUnread, useIncomingRequests, useMyGroups, usePrefetchTabs } from '@/features/hooks';
 
 /** タブ名 → 下部ナビでハイライトする項目 */
 const NAV_OF: Record<string, NavKey> = {
@@ -28,9 +28,11 @@ export default function TabsLayout() {
   usePrefetchTabs();
   const requests = useIncomingRequests();
   const groups = useMyGroups();
+  const unread = useChatUnread();
+  const any = (o: Record<string, number> | undefined) => Object.values(o ?? {}).some((n) => n > 0);
   const badge = {
-    friends: (requests.data?.length ?? 0) > 0,
-    groups: (groups.data?.invites.length ?? 0) > 0,
+    friends: (requests.data?.length ?? 0) > 0 || any(unread.data?.dms),
+    groups: (groups.data?.invites.length ?? 0) > 0 || any(unread.data?.groups),
   };
   return (
     <Tabs

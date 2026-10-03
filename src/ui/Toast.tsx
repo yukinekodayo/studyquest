@@ -25,9 +25,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       if (timer.current) clearTimeout(timer.current);
       setToast({ id: Date.now(), message, tone });
       Animated.timing(opacity, { toValue: 1, duration: 160, useNativeDriver: true }).start();
+      // 長い文は読み終えるまで表示する
+      const ms = Math.min(8000, 3200 + Math.max(0, message.length - 20) * 90);
       timer.current = setTimeout(() => {
         Animated.timing(opacity, { toValue: 0, duration: 240, useNativeDriver: true }).start(() => setToast(null));
-      }, 3200);
+      }, ms);
     },
     [opacity],
   );
