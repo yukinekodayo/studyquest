@@ -26,6 +26,8 @@ const SQ_MESSAGES: Record<string, string> = {
   SQ_ALREADY_MEMBER: 'すでにグループのメンバーです',
   SQ_ALREADY_INVITED: 'すでに招待ずみです',
   SQ_GROUP_FULL: 'このグループは満員です(10人まで)',
+  SQ_PROPOSAL_NOT_FOUND: 'この提案はすでに終了しています',
+  SQ_NOT_GROUP_OWNER: 'グループを削除できるのは作成者だけです',
   SQ_INVITE_NOT_FOUND: 'この招待は見つかりませんでした',
 };
 

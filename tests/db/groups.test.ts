@@ -57,7 +57,7 @@ describe('グループ / 協力チャレンジ', () => {
     expect(await errorOf(db.as(other).q("insert into group_members (group_id, user_id, status, joined_at) values ($1, $2, 'joined', now())", [gid, other]))).toMatch(/permission denied/);
   });
 
-  it('今週のクリア数がメンバー合計で進み、目標はメンバー数×5', async () => {
+  it('連続日数: メンバーの誰か1人がクリアした日が続く。目標の初期値は7日', async () => {
     const me = await db.signup('a');
     const b = await db.signup('b');
     const c = await db.signup('c');
@@ -69,19 +69,78 @@ describe('グループ / 協力チャレンジ', () => {
       await db.as(u).rpc('respond_group_invite', gid, true);
     }
     let d = await db.as(me).rpc('get_group_detail', gid);
-    expect(d.week).toMatchObject({ target: 15, progress: 0 });
-    await clearToday(me);
+    expect(d.streak).toMatchObject({ target: 7, current: 0, reached: false, cleared_today: false });
     await clearToday(b);
     d = await db.as(c).rpc('get_group_detail', gid);
-    expect(d.week.progress).toBe(2);
+    expect(d.streak).toMatchObject({ current: 1, cleared_today: true });
     expect(d.members.find((m: { is_me: boolean }) => m.is_me).nickname).toBe('c');
-    expect(d.members.filter((m: { cleared: boolean }) => m.cleared)).toHaveLength(2);
+    expect(d.members.filter((m: { cleared: boolean }) => m.cleared)).toHaveLength(1);
     const list = await db.as(me).rpc('my_groups');
     expect(list.groups[0]).toMatchObject({ name: '協力', member_count: 3 });
-    expect(list.groups[0].week.progress).toBe(2);
+    expect(list.groups[0].streak.current).toBe(1);
   });
 
-  it('参加前のクリアは今週の進捗に数えない', async () => {
+  it('連続は日をまたいで数え、1日空くと途切れる。目標到達で reached', async () => {
+    const me = await db.signup('a');
+    const gid = await db.as(me).rpc('create_group', 'G', 3);
+    await db.admin("update group_members set joined_at = now() - interval '30 days' where user_id = $1", [me]);
+    const days = async (offsets: number[]) => {
+      await db.admin('delete from daily_completions where user_id = $1', [me]);
+      for (const o of offsets) {
+        await db.admin(
+          "insert into daily_completions (user_id, completed_date, must_total, streak_count) values ($1, (now() at time zone (select timezone from profiles where id = $1))::date - $2::int, 1, 1)",
+          [me, o],
+        );
+      }
+      return (await db.as(me).rpc('get_group_detail', gid)).streak;
+    };
+    expect(await days([0, 1, 2])).toMatchObject({ target: 3, current: 3, reached: true });
+    expect(await days([1, 2])).toMatchObject({ current: 2, reached: false, cleared_today: false });
+    expect(await days([0, 1, 3, 4])).toMatchObject({ current: 2 });
+    expect(await days([3, 4])).toMatchObject({ current: 0 });
+    expect(await errorOf(db.as(me).rpc('create_group', 'X', 0))).toContain('SQ_INVALID_INPUT');
+  });
+
+  it('目標日数の変更は、メンバー全員が賛成して初めて反映される', async () => {
+    const me = await db.signup('a');
+    const b = await db.signup('b');
+    const c = await db.signup('c');
+    const outsider = await db.signup('o');
+    await makeFriends(me, b);
+    await makeFriends(me, c);
+    const gid = await db.as(me).rpc('create_group', 'G');
+    for (const u of [b, c]) {
+      await db.as(me).rpc('invite_to_group', gid, u);
+      await db.as(u).rpc('respond_group_invite', gid, true);
+    }
+    const target = async () => (await db.as(me).rpc('get_group_detail', gid)).streak.target;
+    expect(await errorOf(db.as(outsider).rpc('propose_group_target', gid, 14))).toContain('SQ_GROUP_NOT_FOUND');
+    expect(await errorOf(db.as(me).rpc('propose_group_target', gid, 7))).toContain('SQ_INVALID_INPUT');
+    expect(await errorOf(db.as(me).rpc('propose_group_target', gid, 366))).toContain('SQ_INVALID_INPUT');
+    expect(await errorOf(db.as(me).rpc('respond_group_target', gid, true))).toContain('SQ_PROPOSAL_NOT_FOUND');
+
+    await db.as(me).rpc('propose_group_target', gid, 14);
+    expect(await target()).toBe(7);
+    const d = await db.as(b).rpc('get_group_detail', gid);
+    expect(d.proposal).toMatchObject({ target_days: 14, proposed_by: 'a', approved_by_me: false, approved_count: 1, member_count: 3 });
+    await db.as(b).rpc('respond_group_target', gid, true);
+    expect(await target()).toBe(7);
+    await db.as(c).rpc('respond_group_target', gid, true);
+    expect(await target()).toBe(14);
+    expect((await db.as(me).rpc('get_group_detail', gid)).proposal).toBeNull();
+
+    await db.as(b).rpc('propose_group_target', gid, 30);
+    await db.as(c).rpc('respond_group_target', gid, false);
+    expect((await db.as(me).rpc('get_group_detail', gid)).proposal).toBeNull();
+    expect(await target()).toBe(14);
+
+    await db.as(me).rpc('propose_group_target', gid, 3);
+    await db.as(b).rpc('respond_group_target', gid, true);
+    await db.as(c).rpc('leave_group', gid);
+    expect(await target()).toBe(3);
+  });
+
+  it('参加前のクリアは連続に数えない', async () => {
     const me = await db.signup('a');
     const b = await db.signup('b');
     await makeFriends(me, b);
@@ -90,9 +149,9 @@ describe('グループ / 協力チャレンジ', () => {
     await db.as(me).rpc('invite_to_group', gid, b);
     await db.as(b).rpc('respond_group_invite', gid, true);
     // 参加日(=今日)以降なので今日のクリアは数える
-    expect((await db.as(me).rpc('get_group_detail', gid)).week.progress).toBe(1);
+    expect((await db.as(me).rpc('get_group_detail', gid)).streak.current).toBe(1);
     await db.admin("update group_members set joined_at = now() + interval '1 day' where user_id = $1", [b]);
-    expect((await db.as(me).rpc('get_group_detail', gid)).week.progress).toBe(0);
+    expect((await db.as(me).rpc('get_group_detail', gid)).streak.current).toBe(0);
   });
 
   it('招待の辞退・脱退・オーナー移譲・全員抜けたら解散', async () => {
@@ -110,6 +169,20 @@ describe('グループ / 協力チャレンジ', () => {
     expect(g.owner_id).toBe(b);
     await db.as(b).rpc('leave_group', gid);
     expect(await db.admin('select * from groups where id = $1', [gid])).toHaveLength(0);
+  });
+
+  it('グループ削除はオーナーだけができ、メンバー行も消える', async () => {
+    const me = await db.signup('a');
+    const b = await db.signup('b');
+    await makeFriends(me, b);
+    const gid = await db.as(me).rpc('create_group', '削除');
+    await db.as(me).rpc('invite_to_group', gid, b);
+    await db.as(b).rpc('respond_group_invite', gid, true);
+    expect(await errorOf(db.as(b).rpc('delete_group', gid))).toContain('SQ_NOT_GROUP_OWNER');
+    await db.as(me).rpc('delete_group', gid);
+    expect(await db.admin('select * from groups where id = $1', [gid])).toHaveLength(0);
+    expect(await db.admin('select * from group_members where group_id = $1', [gid])).toHaveLength(0);
+    expect(await errorOf(db.as(me).rpc('delete_group', gid))).toContain('SQ_GROUP_NOT_FOUND');
   });
 
   it('入力検証: 空/長い名前、定員10人', async () => {
