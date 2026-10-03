@@ -1556,44 +1556,36 @@ drop function if exists public._group_week(uuid, date);
 
 -- 現在の連続日数(今日のクリアがまだなら昨日までの連続を数える)
 create or replace function public._group_streak(p_group uuid, p_today date) returns jsonb
-language plpgsql stable security definer set search_path = public, pg_temp as $$
-declare
-  v_target int;
-  v_start date;
-  v_count int;
-begin
-  select g.target_days into v_target from public.groups g where g.id = p_group;
-  select case
-           when exists (
-             select 1
-               from public.group_members gm
-               join public.profiles p on p.id = gm.user_id
-               join public.daily_completions d on d.user_id = gm.user_id
-              where gm.group_id = p_group and gm.status = 'joined'
-                and d.completed_date = p_today
-                and d.completed_date >= (gm.joined_at at time zone p.timezone)::date
-           ) then p_today else p_today - 1 end
-    into v_start;
-  select count(*) into v_count
-    from (
-      select x.dt, row_number() over (order by x.dt desc) as rn
-        from (
-          select distinct d.completed_date as dt
-            from public.group_members gm
-            join public.profiles p on p.id = gm.user_id
-            join public.daily_completions d on d.user_id = gm.user_id
-           where gm.group_id = p_group and gm.status = 'joined'
-             and d.completed_date >= (gm.joined_at at time zone p.timezone)::date
-             and d.completed_date <= v_start
-        ) x
-    ) r
-   where r.dt = v_start - (r.rn - 1)::int;
-  return jsonb_build_object(
-    'target', v_target,
-    'current', v_count,
-    'reached', v_count >= v_target,
-    'cleared_today', v_start = p_today);
-end $$;
+language sql stable security definer set search_path = public, pg_temp as $$
+  with days as (
+    select distinct d.completed_date as dt
+      from public.group_members gm
+      join public.profiles p on p.id = gm.user_id
+      join public.daily_completions d on d.user_id = gm.user_id
+     where gm.group_id = p_group and gm.status = 'joined'
+       and d.completed_date >= (gm.joined_at at time zone p.timezone)::date
+  ),
+  st as (
+    select case when exists (select 1 from days where days.dt = p_today) then p_today else p_today - 1 end as s
+  ),
+  ranked as (
+    select days.dt, row_number() over (order by days.dt desc) as rn
+      from days, st
+     where days.dt <= st.s
+  ),
+  cnt as (
+    select count(*)::int as n
+      from ranked, st
+     where ranked.dt = st.s - (ranked.rn - 1)::int
+  )
+  select jsonb_build_object(
+    'target', g.target_days,
+    'current', cnt.n,
+    'reached', cnt.n >= g.target_days,
+    'cleared_today', st.s = p_today)
+    from public.groups g, cnt, st
+   where g.id = p_group
+$$;
 
 -- 全員(参加中のメンバー)が賛成していたら目標を反映して提案を閉じる
 create or replace function public._apply_group_target(p_group uuid) returns void
