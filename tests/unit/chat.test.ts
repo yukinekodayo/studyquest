@@ -5,7 +5,7 @@ import { formatChatTime, isQuietHour, QUICK_PHRASES, REPORT_REASONS, unreadLabel
 import { toUserMessage } from '@/domain/errors';
 
 describe('チャットのルール(TypeScript と SQL で一致)', () => {
-  const sql = readFileSync(path.resolve(__dirname, '../../supabase/migrations/20260930000007_chat.sql'), 'utf8');
+  const sql = readFileSync(path.resolve(__dirname, '../../supabase/migrations/20260930000009_chat.sql'), 'utf8');
   it('定型の一言が SQL と完全に一致する', () => {
     const m = /_quick_phrases\(\)[\s\S]*?array\[(.*?)\]/.exec(sql);
     const sqlPhrases = [...(m?.[1] ?? '').matchAll(/'([^']+)'/g)].map((x) => x[1]);
