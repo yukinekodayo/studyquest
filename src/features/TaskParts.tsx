@@ -1,4 +1,5 @@
 import { StyleSheet, View } from 'react-native';
+import { subjectColor } from '@/domain/subjects';
 import { PendingStamp, Stamp } from '@/ui/Stamp';
 import { Text } from '@/ui/Text';
 import { colors } from '@/ui/theme';
@@ -9,10 +10,11 @@ export function TaskMark({ task, size = 38, showInitial = false }: { task: Pick<
   // 完了しても、ハンコを自分で押すまでは「押す」の印(青い点線)のまま
   if (task.status === 'done') return task.stamped_at ? <Stamp type="normal" size={size} /> : <PendingStamp size={size} />;
   const doing = task.status === 'doing';
+  const sc = subjectColor(task.title);
   return (
-    <View style={[styles.ring, { width: size, height: size, borderRadius: size / 2 }, doing && styles.ringDoing]}>
+    <View style={[styles.ring, { width: size, height: size, borderRadius: size / 2, borderColor: sc.fg, backgroundColor: doing ? sc.bg : colors.white }, doing && styles.ringDoing]}>
       {showInitial ? (
-        <Text serif size={size * 0.42} color={doing ? colors.blue : colors.inkSoft} style={styles.initial}>
+        <Text serif size={size * 0.42} color={sc.fg} style={styles.initial}>
           {Array.from(task.title)[0]}
         </Text>
       ) : null}
@@ -22,6 +24,6 @@ export function TaskMark({ task, size = 38, showInitial = false }: { task: Pick<
 
 const styles = StyleSheet.create({
   ring: { borderWidth: 1.5, borderColor: '#C9C6BD', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white },
-  ringDoing: { borderColor: colors.blue, backgroundColor: colors.blueSoft },
+  ringDoing: { borderWidth: 2.5 },
   initial: { includeFontPadding: false },
 });

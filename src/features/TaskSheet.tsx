@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { addTask, deleteTask, uncompleteTask, updateTask } from '@/api/tasks';
+import { subjectColor } from '@/domain/subjects';
 import { PLANNED_MINUTES_CHOICES, TASK_SUGGESTIONS, TASK_TITLE_MAX, taskInputSchema, firstIssue } from '@/domain/validation';
 import { haptic } from '@/lib/haptics';
 import type { TaskKind, TaskRow } from '@/types/database';
@@ -93,8 +94,8 @@ export function TaskSheet({ visible, onClose, task, defaultKind = 'must' }: Task
         {!task ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.suggest}>
             {TASK_SUGGESTIONS.map((s) => (
-              <PressableScale key={s} onPress={() => { haptic.select(); setTitle(s); setError(null); }} style={[styles.suggestChip, title === s && styles.suggestOn]} pressedScale={0.94} accessibilityRole="button" testID={`suggest-${s}`}>
-                <Text variant="bodyBold" size={13} color={title === s ? colors.white : colors.blue}>{s}</Text>
+              <PressableScale key={s} onPress={() => { haptic.select(); setTitle(s); setError(null); }} style={[styles.suggestChip, { backgroundColor: title === s ? subjectColor(s).fg : subjectColor(s).bg, borderColor: subjectColor(s).fg }]} pressedScale={0.94} accessibilityRole="button" testID={`suggest-${s}`}>
+                <Text variant="bodyBold" size={13} color={title === s ? colors.white : subjectColor(s).fg}>{s}</Text>
               </PressableScale>
             ))}
           </ScrollView>
@@ -149,8 +150,7 @@ function KindOption({ selected, title, body, onPress, testID }: { selected: bool
 const styles = StyleSheet.create({
   section: { gap: 8 },
   suggest: { gap: 8, paddingVertical: 2 },
-  suggestChip: { paddingHorizontal: 14, minHeight: 36, borderRadius: radius.pill, backgroundColor: colors.blueSoft, alignItems: 'center', justifyContent: 'center' },
-  suggestOn: { backgroundColor: colors.blue },
+  suggestChip: { paddingHorizontal: 14, minHeight: 36, borderRadius: radius.pill, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   choice: { width: '31%', flexGrow: 1, minHeight: 50, borderRadius: radius.md, backgroundColor: colors.beige, alignItems: 'center', justifyContent: 'center' },
   choiceOn: { backgroundColor: colors.blue },

@@ -7,6 +7,7 @@ import { useStats, useRefetchOnFocus, useReorderTasks, useTodayTasks } from '@/f
 import { TaskSheet } from '@/features/TaskSheet';
 import { formatJaDate } from '@/domain/dates';
 import { mustProgress, moveWithinKind, totalPlannedMinutes } from '@/domain/quest';
+import { subjectColor } from '@/domain/subjects';
 import { formatPlanned } from '@/domain/timer';
 import type { TaskRow } from '@/types/database';
 import { Button } from '@/ui/Button';
@@ -52,8 +53,8 @@ export default function QuestScreen() {
   const renderRow = (t: TaskRow, i: number) => (
     <View key={t.id} style={[styles.row, i > 0 && styles.rowBorder]} testID={`quest-task-${t.title}`}>
       <PressableScale style={styles.rowMain} pressedScale={0.985} onPress={() => (editing ? setSheet({ open: true, task: t, kind: t.kind }) : router.push(`/quest/${t.id}`))} accessibilityRole="button" accessibilityLabel={t.title}>
-        <View style={styles.subject}>
-          <Text serif size={20} color={colors.ink} style={styles.subjectText}>{Array.from(t.title)[0]}</Text>
+        <View style={[styles.subject, { backgroundColor: subjectColor(t.title).bg }]}>
+          <Text serif size={20} color={subjectColor(t.title).fg} style={styles.subjectText}>{Array.from(t.title)[0]}</Text>
         </View>
         <View style={styles.rowText}>
           <Text variant="bodyBold" size={16} numberOfLines={1}>{t.title}</Text>
