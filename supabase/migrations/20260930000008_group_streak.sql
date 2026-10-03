@@ -20,37 +20,41 @@ drop function if exists public._group_week(uuid, date);
 create or replace function public._group_streak(p_group uuid, p_today date) returns jsonb
 language plpgsql stable security definer set search_path = public, pg_temp as $$
 declare
-  target int;
-  start_day date;
-  cur int;
+  v_target int;
+  v_start date;
+  v_count int;
 begin
-  select target_days into target from public.groups where id = p_group;
-  with days as (
-    select distinct d.completed_date as dt
-      from public.group_members gm
-      join public.profiles p on p.id = gm.user_id
-      join public.daily_completions d on d.user_id = gm.user_id
-     where gm.group_id = p_group and gm.status = 'joined'
-       and d.completed_date >= (gm.joined_at at time zone p.timezone)::date
-  )
-  select case when exists (select 1 from days where dt = p_today) then p_today else p_today - 1 end into start_day;
-  with days as (
-    select distinct d.completed_date as dt
-      from public.group_members gm
-      join public.profiles p on p.id = gm.user_id
-      join public.daily_completions d on d.user_id = gm.user_id
-     where gm.group_id = p_group and gm.status = 'joined'
-       and d.completed_date >= (gm.joined_at at time zone p.timezone)::date
-       and d.completed_date <= start_day
-  ), ranked as (
-    select dt, row_number() over (order by dt desc) as rn from days
-  )
-  select count(*) into cur from ranked where dt = start_day - (rn - 1)::int;
+  select g.target_days into v_target from public.groups g where g.id = p_group;
+  select case
+           when exists (
+             select 1
+               from public.group_members gm
+               join public.profiles p on p.id = gm.user_id
+               join public.daily_completions d on d.user_id = gm.user_id
+              where gm.group_id = p_group and gm.status = 'joined'
+                and d.completed_date = p_today
+                and d.completed_date >= (gm.joined_at at time zone p.timezone)::date
+           ) then p_today else p_today - 1 end
+    into v_start;
+  select count(*) into v_count
+    from (
+      select x.dt, row_number() over (order by x.dt desc) as rn
+        from (
+          select distinct d.completed_date as dt
+            from public.group_members gm
+            join public.profiles p on p.id = gm.user_id
+            join public.daily_completions d on d.user_id = gm.user_id
+           where gm.group_id = p_group and gm.status = 'joined'
+             and d.completed_date >= (gm.joined_at at time zone p.timezone)::date
+             and d.completed_date <= v_start
+        ) x
+    ) r
+   where r.dt = v_start - (r.rn - 1)::int;
   return jsonb_build_object(
-    'target', target,
-    'current', cur,
-    'reached', cur >= target,
-    'cleared_today', start_day = p_today);
+    'target', v_target,
+    'current', v_count,
+    'reached', v_count >= v_target,
+    'cleared_today', v_start = p_today);
 end $$;
 
 -- 全員(参加中のメンバー)が賛成していたら目標を反映して提案を閉じる
