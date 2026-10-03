@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { deleteMyAccount, signOut } from '@/api/auth';
 import { AVATARS, NICKNAME_MAX, nicknameSchema, firstIssue, type AvatarKey } from '@/domain/validation';
@@ -31,8 +31,11 @@ export default function SettingsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  // 最初に読み込めたときだけ入力欄へ反映(再取得で未保存の入力を上書きしない)
+  const initialized = useRef(false);
   useEffect(() => {
-    if (profile.data) {
+    if (profile.data && !initialized.current) {
+      initialized.current = true;
       setNickname(profile.data.nickname);
       setAvatar(profile.data.avatar);
     }

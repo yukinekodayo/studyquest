@@ -114,7 +114,7 @@ export function DoneView({ task, tasks, stats, result }: Props) {
           <Text variant="bodyBold" size={15} color={colors.blue} testID="stamp-pending">タップして「済」を押す</Text>
         ) : null}
         <Text variant="display" size={30} testID="done-title" style={styles.doneTitle}>{task.title}　完了</Text>
-        <Text variant="body" color={colors.inkSoft}>{task.planned_minutes}分の学習を記録しました</Text>
+        <Text variant="body" color={colors.inkSoft}>「{task.title}」を完了しました（予定 {task.planned_minutes}分）</Text>
         {fresh ? <Text variant="bodyBold" size={14} color={colors.blue} testID="combo-message">{comboMessage(doneToday, progress.remaining)}</Text> : null}
         <View style={styles.xpRow}>
           <Text variant="num" size={26} color={colors.blue} testID="xp-gained">+{shownXp}<Text variant="bodyBold" size={14} color={colors.blue}> XP</Text></Text>

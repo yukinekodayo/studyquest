@@ -21,9 +21,14 @@ export default function SignupScreen() {
   const [avatar, setAvatar] = useState<AvatarKey>('blue');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [sentMail, setSentMail] = useState(false);
 
   const submit = async () => {
+    if (password !== passwordConfirm) {
+      toast.show('パスワードが一致しません。もう一度入力してください', 'error');
+      return;
+    }
     const result = await run(() => signUp({ email, password, nickname, avatar }));
     if (result?.needsConfirmation) {
       setSentMail(true);
@@ -60,6 +65,7 @@ export default function SignupScreen() {
         <TextField label="ニックネーム" value={nickname} onChangeText={setNickname} maxLength={NICKNAME_MAX} placeholder="例：ゆうき" hint="本名は使わないでください(友だちに表示されます)" testID="signup-nickname" />
         <TextField label="メールアドレス" value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" textContentType="emailAddress" placeholder="you@example.com" testID="signup-email" />
         <TextField label="パスワード" value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoComplete="new-password" textContentType="newPassword" placeholder="8文字以上" testID="signup-password" />
+        <TextField label="パスワード(確認)" value={passwordConfirm} onChangeText={setPasswordConfirm} secureTextEntry autoCapitalize="none" autoComplete="new-password" textContentType="newPassword" placeholder="もう一度入力" error={passwordConfirm.length > 0 && password !== passwordConfirm ? 'パスワードが一致しません' : undefined} testID="signup-password-confirm" onSubmitEditing={submit} />
         <Button label="登録してはじめる" onPress={submit} testID="signup-submit" />
         <Text variant="caption" align="center">住所・電話番号・学校名などは聞きませんし、表示もしません。</Text>
       </Card>
