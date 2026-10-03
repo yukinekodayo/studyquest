@@ -124,6 +124,10 @@ npm run e2e:phase2   # 2ユーザーでフレンド・応援・一緒に勉強�
 node scripts/e2e/chat.mjs  # チャット・安全チェック・通報・ブロック・運営確認
 ```
 
+## Web 版のデプロイ(Vercel)
+
+`vercel.json` を同梱。Vercel でこのリポジトリを Import し、**Environment Variables** に `EXPO_PUBLIC_SUPABASE_URL` と `EXPO_PUBLIC_SUPABASE_ANON_KEY` を設定してデプロイします(anon key のみ。service_role は入れない)。デプロイ後、Supabase の Authentication > URL Configuration の Site URL / Redirect URLs に Vercel の URL を追加してください。
+
 ## iOS / Android への配信
 
 Expo(EAS Build)でビルドします。
