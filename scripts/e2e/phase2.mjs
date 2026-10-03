@@ -143,7 +143,7 @@ await a.page.goto(`${BASE}/groups`, { waitUntil: 'domcontentloaded' });
 await tid(a.page, 'group-テスト前がんばる会').click();
 await tid(a.page, 'group-progress').waitFor({ timeout: 20000 });
 check(norm(await tid(a.page, 'group-progress').textContent()).startsWith('1 / 7'), 'ゆうき側の連続が 1 / 7日連続(はるがクリア済み)');
-check(norm(await tid(a.page, 'group-hint').textContent()).includes('1日連続'), '今日はもうチームでクリア済みの案内');
+check(norm(await tid(a.page, 'group-hint').textContent()).includes('今日もチームでクリア'), '今日はもうチームでクリア済みの案内');
 check(norm(await tid(a.page, 'gmember-はる').textContent()).includes('クリア'), 'メンバーはるは「クリア！」');
 await shot(a.page, '26-group-detail');
 
