@@ -13,7 +13,7 @@ import { Screen } from '@/ui/Screen';
 import { ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
 import { useRun, useToast } from '@/ui/Toast';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
 
 /** 運営用: 通報されたメッセージの確認と対応(運営アカウントだけが開ける) */
 export default function AdminScreen() {
@@ -73,11 +73,11 @@ export default function AdminScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   back: { width: 40, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
   card: { gap: 10 },
   meta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
   quote: { backgroundColor: colors.beige, borderRadius: 14, padding: 14 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-});
+}));

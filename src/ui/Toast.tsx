@@ -4,7 +4,7 @@ import { Animated, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toUserMessage } from '@/domain/errors';
 import { Text } from './Text';
-import { colors, radius } from './theme';
+import { colors, radius, themed } from './theme';
 
 type Tone = 'error' | 'success' | 'info';
 interface ToastApi {
@@ -37,7 +37,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
   const api = useMemo(() => ({ show, showError }), [show, showError]);
-  const bg = toast?.tone === 'error' ? colors.red : toast?.tone === 'success' ? colors.green : colors.ink;
+  const bg = toast?.tone === 'error' ? colors.red : toast?.tone === 'success' ? colors.green : colors.toast;
   const icon = toast?.tone === 'error' ? 'alert-circle' : toast?.tone === 'success' ? 'checkmark-circle' : 'information-circle';
 
   return (
@@ -73,8 +73,8 @@ export function useRun() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   host: { position: 'absolute', left: 16, right: 16, alignItems: 'center', zIndex: 100 },
   toast: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 16, borderRadius: radius.md, maxWidth: 480 },
   msg: { flexShrink: 1 },
-});
+}));

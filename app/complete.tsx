@@ -17,7 +17,7 @@ import { Stamp } from '@/ui/Stamp';
 import { ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
 import { useToast } from '@/ui/Toast';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
 
 /** 1日の完全達成画面: ハンコは自分でタップして押す(押した瞬間に強い振動) */
 export default function CompleteScreen() {
@@ -138,11 +138,11 @@ export default function CompleteScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   content: { gap: 18, alignItems: 'stretch' },
   head: { alignItems: 'center', gap: 8, paddingTop: 12 },
   eyebrow: { letterSpacing: 3 },
-  halo: { alignSelf: 'center', width: 280, height: 280, borderRadius: 140, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center', shadowColor: '#1B2240', shadowOpacity: 0.08, shadowRadius: 24, shadowOffset: { width: 0, height: 8 }, elevation: 2 },
+  halo: { alignSelf: 'center', width: 280, height: 280, borderRadius: 140, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', shadowColor: '#1B2240', shadowOpacity: 0.08, shadowRadius: 24, shadowOffset: { width: 0, height: 8 }, elevation: 2 },
   tapHint: { marginTop: -4 },
   after: { alignItems: 'center', gap: 14 },
   streakRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -155,4 +155,4 @@ const styles = StyleSheet.create({
   track: { height: 5, borderRadius: 3, backgroundColor: colors.track, overflow: 'hidden' },
   fill: { height: 5, borderRadius: 3 },
   footer: { gap: 4 },
-});
+}));

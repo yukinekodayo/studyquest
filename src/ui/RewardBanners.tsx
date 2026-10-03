@@ -4,7 +4,7 @@ import { Animated, StyleSheet, View } from 'react-native';
 import { toAchievementDefs } from '@/domain/achievements';
 import { haptic } from '@/lib/haptics';
 import { Text } from './Text';
-import { colors, radius } from './theme';
+import { colors, radius, themed } from './theme';
 
 function PopIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   const v = useRef(new Animated.Value(0)).current;
@@ -63,10 +63,10 @@ export function AchievementBanners({ codes }: { codes: readonly string[] | undef
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   list: { gap: 10, alignSelf: 'stretch' },
   card: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: colors.blueSoft, borderRadius: radius.lg, padding: 14, alignSelf: 'stretch' },
-  level: { backgroundColor: '#FBEFDD' },
+  level: { backgroundColor: colors.levelBanner },
   badge: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center' },
   text: { flex: 1, gap: 1 },
-});
+}));

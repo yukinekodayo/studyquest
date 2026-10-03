@@ -14,7 +14,7 @@ import { ProgressSegments } from '@/ui/ProgressSegments';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { useRun } from '@/ui/Toast';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
 import { OPTIMISTIC_SESSION_ID } from '../actions';
 import { keys, useStats } from '../hooks';
 import { useNow } from '../useNow';
@@ -138,7 +138,7 @@ export function TimerView({ task, session, offset, tasks, onFinished, onBack }: 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   content: { gap: 14 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   back: { width: 44, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
@@ -148,4 +148,4 @@ const styles = StyleSheet.create({
   quit: { alignSelf: 'center', minHeight: 40, justifyContent: 'center' },
   underline: { textDecorationLine: 'underline' },
   footerCard: { gap: 10, padding: 16 },
-});
+}));

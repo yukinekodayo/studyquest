@@ -7,7 +7,7 @@ import { Button } from '@/ui/Button';
 import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { useRun } from '@/ui/Toast';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
 import { useStartTask } from '../actions';
 
 /** まだタイマーが動いていないタスク(直接開いたとき) */
@@ -46,8 +46,8 @@ export function ReadyView({ task, onManualDone }: { task: TaskRow; onManualDone:
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   content: { flex: 1, justifyContent: 'center' },
   center: { alignItems: 'center', gap: 10 },
   footer: { gap: 4 },
-});
+}));

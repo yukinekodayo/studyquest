@@ -15,7 +15,7 @@ import { Screen } from '@/ui/Screen';
 import { ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
 import { useRun } from '@/ui/Toast';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
 
 /** ハンコ帳: カレンダーで達成状況を見る(押し忘れた日はタップで押せる) */
 export default function StampsScreen() {
@@ -136,7 +136,7 @@ function Stat({ label, value, testID }: { label: string; value: number; testID: 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   back: { width: 40, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
   stats: { flexDirection: 'row', alignItems: 'center' },
@@ -155,4 +155,4 @@ const styles = StyleSheet.create({
   collectHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   collectRow: { flexDirection: 'row', justifyContent: 'space-between' },
   collectItem: { flex: 1, alignItems: 'center', gap: 3 },
-});
+}));

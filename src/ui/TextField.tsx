@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 import { Text } from './Text';
-import { colors, fonts, radius } from './theme';
+import { colors, fonts, radius, themed } from './theme';
 
 interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   label?: string;
@@ -33,7 +33,7 @@ export function TextField({ label, error, hint, onFocus, onBlur, ...input }: Tex
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   wrap: { gap: 6 },
   input: {
     minHeight: 52,
@@ -46,6 +46,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'transparent',
   },
-  focused: { borderColor: colors.blue, backgroundColor: colors.white },
+  focused: { borderColor: colors.blue, backgroundColor: colors.card },
   inputError: { borderColor: colors.red, backgroundColor: colors.redSoft },
-});
+}));

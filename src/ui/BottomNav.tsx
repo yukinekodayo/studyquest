@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { haptic } from '@/lib/haptics';
 import { Text } from './Text';
-import { colors, NAV_HEIGHT } from './theme';
+import { colors, NAV_HEIGHT, themed } from './theme';
 
 export type NavKey = 'home' | 'quest' | 'friends' | 'groups' | 'profile';
 
@@ -49,10 +49,10 @@ export function BottomNav({ active, onSelect, badge }: { active: NavKey; onSelec
   );
 }
 
-const styles = StyleSheet.create({
-  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', backgroundColor: colors.white, borderTopWidth: 1, borderTopColor: colors.line },
+const styles = themed(() => StyleSheet.create({
+  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', backgroundColor: colors.card, borderTopWidth: 1, borderTopColor: colors.line },
   item: { flex: 1, alignItems: 'center', gap: 3, minHeight: 56, paddingTop: 10 },
   indicator: { position: 'absolute', top: -1, width: 26, height: 3, borderRadius: 2, backgroundColor: 'transparent' },
   indicatorOn: { backgroundColor: colors.blue },
   badge: { position: 'absolute', top: -1, right: -4, width: 9, height: 9, borderRadius: 5, backgroundColor: colors.red, borderWidth: 1.5, borderColor: colors.white },
-});
+}));

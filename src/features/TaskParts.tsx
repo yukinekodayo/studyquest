@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { PendingStamp, Stamp } from '@/ui/Stamp';
 import { Text } from '@/ui/Text';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
 import type { TaskRow } from '@/types/database';
 
 /** タスクの印: 押したら「済」ハンコ、完了だけなら「押」の印、未完了は輪(勉強中は青い輪)。showInitial で頭文字入り */
@@ -20,8 +20,8 @@ export function TaskMark({ task, size = 38, showInitial = false }: { task: Pick<
   );
 }
 
-const styles = StyleSheet.create({
-  ring: { borderWidth: 1.5, borderColor: '#C9C6BD', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white },
+const styles = themed(() => StyleSheet.create({
+  ring: { borderWidth: 1.5, borderColor: colors.ringBorder, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card },
   ringDoing: { borderColor: colors.blue, backgroundColor: colors.blueSoft },
   initial: { includeFontPadding: false },
-});
+}));

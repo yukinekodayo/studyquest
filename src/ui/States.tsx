@@ -4,7 +4,7 @@ import { Animated, Easing, StyleSheet, View, type DimensionValue, type StyleProp
 import { toUserMessage } from '@/domain/errors';
 import { Button } from './Button';
 import { Text } from './Text';
-import { colors, radius } from './theme';
+import { colors, radius, themed } from './theme';
 
 /** 読み込み中の骨組み(ふわっと明滅)。スピナーより「すぐ出る」感じになる */
 export function Skeleton({ width = '100%', height = 16, style }: { width?: DimensionValue; height?: number; style?: StyleProp<ViewStyle> }) {
@@ -62,8 +62,8 @@ export function EmptyState({ title, body, action }: { title: string; body?: stri
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   skel: { gap: 16, paddingTop: 8 },
-  card: { backgroundColor: colors.white, borderRadius: radius.lg, padding: 18, gap: 14 },
+  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 18, gap: 14 },
   center: { alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 36, paddingHorizontal: 24 },
-});
+}));

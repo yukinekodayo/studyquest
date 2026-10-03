@@ -18,7 +18,7 @@ import { Stamp } from '@/ui/Stamp';
 import { ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
 import { useRun, useToast } from '@/ui/Toast';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
 
 /** グループ詳細: みんなで◯日連続(個人ランキングではなく、みんなで目標達成) */
 export default function GroupDetailScreen() {
@@ -228,7 +228,7 @@ export default function GroupDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   grow: { flex: 1 },
   back: { width: 40, height: 44, alignItems: 'center', justifyContent: 'center' },
@@ -248,4 +248,4 @@ const styles = StyleSheet.create({
   memberBar: { flex: 1 },
   memberStatus: { minWidth: 48, textAlign: 'right' },
   inviteRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-});
+}));

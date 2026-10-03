@@ -23,7 +23,7 @@ import { Screen } from '@/ui/Screen';
 import { Stamp } from '@/ui/Stamp';
 import { ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
-import { colors, radius } from '@/ui/theme';
+import { colors, radius, themed } from '@/ui/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -194,7 +194,7 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   headerText: { flex: 1, gap: 4 },
   greeting: { letterSpacing: 1 },
@@ -220,4 +220,4 @@ const styles = StyleSheet.create({
   noFriends: { gap: 12, alignItems: 'center' },
   friendRow: { flexDirection: 'row', justifyContent: 'space-between' },
   friend: { flex: 1, alignItems: 'center', gap: 4 },
-});
+}));

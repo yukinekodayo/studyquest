@@ -19,7 +19,7 @@ import { Screen } from '@/ui/Screen';
 import { EmptyState, ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
 import { useRun } from '@/ui/Toast';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
 
 const norm = (s: string) => s.trim().toLowerCase();
 
@@ -140,7 +140,7 @@ export default function StudyPartyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   grow: { flex: 1, gap: 2 },
   liveRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
@@ -156,4 +156,4 @@ const styles = StyleSheet.create({
   otherRooms: { gap: 6, paddingTop: 8 },
   otherRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, borderTopWidth: 1, borderTopColor: colors.line },
   stack: { flexDirection: 'row', minWidth: 60 },
-});
+}));

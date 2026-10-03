@@ -19,7 +19,7 @@ import { PendingStamp, Stamp } from '@/ui/Stamp';
 import { ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
 import { useRun } from '@/ui/Toast';
-import { colors, radius } from '@/ui/theme';
+import { colors, radius, themed } from '@/ui/theme';
 
 export default function QuestScreen() {
   const router = useRouter();
@@ -134,7 +134,7 @@ function IconBtn({ icon, label, onPress, testID }: { icon: keyof typeof Ionicons
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   editToggle: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
   meta: { flexDirection: 'row', alignItems: 'baseline', gap: 16, marginTop: 4 },
@@ -153,4 +153,4 @@ const styles = StyleSheet.create({
   startBtn: { minWidth: 76, borderRadius: radius.md },
   emptyRow: { paddingVertical: 24 },
   addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 56, borderRadius: radius.lg, backgroundColor: colors.beige },
-});
+}));

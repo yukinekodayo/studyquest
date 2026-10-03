@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
-import { colors } from './theme';
+import { colors, themed } from './theme';
 
 interface Props {
   total: number;
@@ -35,7 +35,7 @@ function Segment({ filled, height, color, track, delay }: { filled: boolean; hei
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   row: { flexDirection: 'row' },
   seg: { flex: 1, borderRadius: 999, overflow: 'hidden' },
-});
+}));

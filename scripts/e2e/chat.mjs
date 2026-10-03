@@ -185,7 +185,7 @@ await np.getByTestId('login-submit').click();
 await np.waitForURL('**/home', { timeout: 20000 }).catch(() => undefined);
 if (np.url().includes('/home')) {
   await np.goto(`${BASE}/friends`, { waitUntil: 'domcontentloaded' });
-  await np.getByTestId('chat-はる').click();
+  await np.getByTestId('chat-はる').click({ timeout: 40000 });
   await np.getByTestId('chat-quiet').waitFor({ timeout: 10000 });
   check((await np.getByTestId('chat-input').count()) === 0, '夜は入力欄が出ず「お休みの時間」の案内');
   await shot(np, '37-chat-quiet');

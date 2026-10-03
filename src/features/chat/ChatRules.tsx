@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { Button } from '@/ui/Button';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
 
 const SEEN_KEY = 'studyquest.chat.rules.v1';
 
@@ -53,9 +53,9 @@ export function ChatRulesSheet({ visible, onClose }: { visible: boolean; onClose
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   list: { gap: 14 },
   row: { flexDirection: 'row', gap: 12 },
   n: { width: 20 },
   t: { flex: 1 },
-});
+}));

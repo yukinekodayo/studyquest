@@ -11,7 +11,7 @@ import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { TextField } from '@/ui/TextField';
 import { useRun } from '@/ui/Toast';
-import { colors, radius } from '@/ui/theme';
+import { colors, radius, themed } from '@/ui/theme';
 
 interface TaskSheetProps {
   visible: boolean;
@@ -146,7 +146,7 @@ function KindOption({ selected, title, body, onPress, testID }: { selected: bool
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   section: { gap: 8 },
   suggest: { gap: 8, paddingVertical: 2 },
   suggestChip: { paddingHorizontal: 14, minHeight: 36, borderRadius: radius.pill, backgroundColor: colors.blueSoft, alignItems: 'center', justifyContent: 'center' },
@@ -162,4 +162,4 @@ const styles = StyleSheet.create({
   grow: { flex: 1 },
   confirm: { gap: 10, backgroundColor: colors.redSoft, borderRadius: radius.md, padding: 12 },
   confirmRow: { flexDirection: 'row', gap: 10 },
-});
+}));

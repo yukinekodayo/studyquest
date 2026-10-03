@@ -22,7 +22,7 @@ import { Sheet } from '@/ui/Sheet';
 import { EmptyState, ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
 import { useRun, useToast } from '@/ui/Toast';
-import { colors, radius } from '@/ui/theme';
+import { colors, radius, themed } from '@/ui/theme';
 
 export default function FriendsScreen() {
   const router = useRouter();
@@ -224,7 +224,7 @@ function Status({ f }: { f: FriendOverviewRow }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   addBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   grow: { flex: 1, gap: 4 },
@@ -253,4 +253,4 @@ const styles = StyleSheet.create({
   reactRow: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end' },
   reactBtn: { alignItems: 'center', minWidth: 70, minHeight: 56, paddingVertical: 6, borderRadius: radius.md, backgroundColor: colors.beige },
   reactSent: { opacity: 0.45 },
-});
+}));

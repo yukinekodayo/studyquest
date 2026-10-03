@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, NAV_HEIGHT } from './theme';
+import { colors, NAV_HEIGHT, themed } from './theme';
 
 interface ScreenProps {
   children: ReactNode;
@@ -38,8 +38,8 @@ export function Screen({ children, scroll = true, withNav = false, onRefresh, re
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   root: { flex: 1 },
   fill: { flex: 1 },
   content: { paddingHorizontal: 20, gap: 16 },
-});
+}));

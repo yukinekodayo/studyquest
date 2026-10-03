@@ -10,6 +10,7 @@ import { unblockUser } from '@/api/chat';
 import { ChatRulesSheet } from '@/features/chat/ChatRules';
 import { useBlocks, useIsAdmin, useProfile, useUpdateProfile } from '@/features/hooks';
 import { haptic } from '@/lib/haptics';
+import { useTheme, type ThemeMode } from '@/lib/theme';
 import { Avatar } from '@/ui/Avatar';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
@@ -19,7 +20,13 @@ import { ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
 import { TextField } from '@/ui/TextField';
 import { useRun, useToast } from '@/ui/Toast';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
+
+const THEME_OPTIONS: { mode: ThemeMode; label: string }[] = [
+  { mode: 'system', label: '自動' },
+  { mode: 'light', label: 'ライト' },
+  { mode: 'dark', label: 'ダーク' },
+];
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -30,6 +37,7 @@ export default function SettingsScreen() {
   const update = useUpdateProfile();
   const blocks = useBlocks();
   const isAdmin = useIsAdmin();
+  const theme = useTheme();
   const [rulesOpen, setRulesOpen] = useState(false);
   const [nickname, setNickname] = useState('');
   const [avatar, setAvatar] = useState<AvatarKey>('blue');
@@ -107,6 +115,24 @@ export default function SettingsScreen() {
       </Card>
 
       <Card style={styles.card}>
+        <Text variant="heading" size={16}>外観</Text>
+        <View style={styles.row}>
+          {THEME_OPTIONS.map((o) => (
+            <Button
+              key={o.mode}
+              label={o.label}
+              size="md"
+              variant={theme.mode === o.mode ? 'primary' : 'soft'}
+              onPress={() => { haptic.select(); theme.setMode(o.mode); }}
+              style={styles.grow}
+              testID={`theme-${o.mode}`}
+            />
+          ))}
+        </View>
+        <Text variant="caption">「自動」は、スマホのダークモード設定に従います。</Text>
+      </Card>
+
+      <Card style={styles.card}>
         <Text variant="heading" size={16}>フレンドコード</Text>
         <Text variant="caption">このコードを友だちに教えると、フレンド申請してもらえます。知らない人には教えないでください。</Text>
         <View style={styles.codeRow}>
@@ -125,7 +151,7 @@ export default function SettingsScreen() {
           <Switch
             value={p.share_subject}
             onValueChange={(v) => { haptic.select(); void run(() => update.mutateAsync({ share_subject: v })); }}
-            trackColor={{ true: colors.blue, false: '#D5D3CB' }}
+            trackColor={{ true: colors.blue, false: colors.switchOff }}
             accessibilityLabel="勉強中の教科を友だちに見せる"
             testID="share-subject"
           />
@@ -177,7 +203,7 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   back: { width: 40, height: 44, alignItems: 'flex-start', justifyContent: 'center' },
   card: { gap: 14 },
@@ -190,4 +216,4 @@ const styles = StyleSheet.create({
   blockRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   danger: { gap: 10, backgroundColor: colors.redSoft, borderRadius: 16, padding: 12 },
   row: { flexDirection: 'row', gap: 10 },
-});
+}));

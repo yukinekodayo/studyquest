@@ -4,7 +4,7 @@ import { ActivityIndicator, StyleSheet, View, type StyleProp, type ViewStyle } f
 import { haptic } from '@/lib/haptics';
 import { PressableScale } from './PressableScale';
 import { Text } from './Text';
-import { colors, radius } from './theme';
+import { colors, radius, themed } from './theme';
 
 type Variant = 'primary' | 'soft' | 'ghost' | 'danger' | 'light' | 'tint';
 type Size = 'lg' | 'md' | 'sm';
@@ -22,14 +22,14 @@ interface ButtonProps {
   accessibilityLabel?: string;
 }
 
-const palette: Record<Variant, { bg: string; fg: string }> = {
+const palette = themed((): Record<Variant, { bg: string; fg: string }> => ({
   primary: { bg: colors.blue, fg: colors.white },
   soft: { bg: colors.beige, fg: colors.ink },
   ghost: { bg: 'transparent', fg: colors.blue },
   danger: { bg: colors.redSoft, fg: colors.red },
   light: { bg: colors.white, fg: colors.blue },
   tint: { bg: colors.blueSoft, fg: colors.blue },
-};
+}));
 const heights: Record<Size, number> = { lg: 54, md: 46, sm: 38 };
 
 /** フラットなボタン。押すと沈み、軽く振動する。処理中は二重タップを防ぐ */
@@ -75,7 +75,7 @@ export function Button({ label, onPress, variant = 'primary', size = 'lg', icon,
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   base: { borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-});
+}));

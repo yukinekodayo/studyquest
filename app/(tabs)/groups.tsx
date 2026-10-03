@@ -18,7 +18,7 @@ import { EmptyState, ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
 import { TextField } from '@/ui/TextField';
 import { useRun, useToast } from '@/ui/Toast';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
 
 export default function GroupsScreen() {
   const router = useRouter();
@@ -136,7 +136,7 @@ export default function GroupsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   addBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   grow: { flex: 1 },
@@ -147,4 +147,4 @@ const styles = StyleSheet.create({
   progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   bar: { height: 6, borderRadius: 3, backgroundColor: colors.track, overflow: 'hidden' },
   barFill: { height: 6, borderRadius: 3, backgroundColor: colors.blue },
-});
+}));

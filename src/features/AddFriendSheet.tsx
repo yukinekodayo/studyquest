@@ -11,7 +11,7 @@ import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { TextField } from '@/ui/TextField';
 import { useRun, useToast } from '@/ui/Toast';
-import { colors, radius } from '@/ui/theme';
+import { colors, radius, themed } from '@/ui/theme';
 import { useIncomingRequests, useProfile } from './hooks';
 
 /** フレンド追加: 自分のコード / 相手のコードで申請 / 届いた申請の承認 */
@@ -94,10 +94,10 @@ export function AddFriendSheet({ visible, onClose }: { visible: boolean; onClose
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   request: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.blueSoft, borderRadius: radius.md, padding: 12 },
   grow: { flex: 1 },
   mine: { gap: 6, backgroundColor: colors.beige, borderRadius: radius.md, padding: 14 },
   codeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   code: { letterSpacing: 3 },
-});
+}));

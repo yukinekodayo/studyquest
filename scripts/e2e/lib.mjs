@@ -13,7 +13,7 @@ export async function launch() {
 }
 
 export async function newUser(browser, label, opts = {}) {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'ja-JP', timezoneId: opts.timezoneId ?? 'Asia/Tokyo' });
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'ja-JP', timezoneId: opts.timezoneId ?? 'Asia/Tokyo', colorScheme: opts.colorScheme ?? 'light' });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(`[${label}] pageerror: ${e.message}`));

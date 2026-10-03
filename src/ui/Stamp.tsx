@@ -1,6 +1,6 @@
 import Svg, { Circle, Polygon, Text as SvgText } from 'react-native-svg';
 import { STAMP_META, type StampType } from '@/domain/stamps';
-import { fonts } from './theme';
+import { colors, fonts, getScheme } from './theme';
 
 interface StampProps {
   type: StampType;
@@ -14,6 +14,7 @@ interface StampProps {
 
 const SCALLOPED: StampType[] = ['green', 'gold', 'special'];
 const TINT: Record<StampType, string> = { normal: '#FDEEEC', blue: '#E8EEFC', green: '#EAF5EE', gold: '#FBF3DE', special: '#EFEAFA', team: '#EAF0F6' };
+const TINT_DARK: Record<StampType, string> = { normal: '#3A2124', blue: '#1F2A4A', green: '#1B3326', gold: '#383018', special: '#2D274A', team: '#222E3E' };
 
 function scallopPoints(cx: number, cy: number, r: number, bumps: number, amp: number): string {
   const pts: string[] = [];
@@ -30,8 +31,9 @@ const SCALLOP = scallopPoints(50, 50, 43, 16, 2.4);
 /** 「済」「7日連続」などのハンコ(明朝体の「済」+ 二重の輪)。すべてSVG描画 */
 export function Stamp({ type, size = 64, locked = false, mark, showSub = true }: StampProps) {
   const meta = STAMP_META[type];
-  const color = locked ? '#BDBAB1' : meta.color;
-  const fill = locked ? '#F1EFEA' : TINT[type];
+  const dark = getScheme() === 'dark';
+  const color = locked ? colors.lockedFg : meta.color;
+  const fill = locked ? colors.lockedFill : (dark ? TINT_DARK : TINT)[type];
   const text = mark ?? meta.mark;
   const isKanji = type === 'normal' || type === 'team' || mark !== undefined;
   const hasSub = showSub && !!meta.sub && mark === undefined && !isKanji;
@@ -74,7 +76,7 @@ export function Stamp({ type, size = 64, locked = false, mark, showSub = true }:
 export function EmptyStamp({ size = 40 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel="未達成">
-      <Circle cx={50} cy={50} r={44} fill="none" stroke="#D9D6CD" strokeWidth={3} />
+      <Circle cx={50} cy={50} r={44} fill="none" stroke={colors.track} strokeWidth={3} />
     </Svg>
   );
 }
@@ -83,8 +85,8 @@ export function EmptyStamp({ size = 40 }: { size?: number }) {
 export function PendingStamp({ size = 40 }: { size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 100 100" accessibilityLabel="ハンコを押せる">
-      <Circle cx={50} cy={50} r={44} fill="#E6ECFB" stroke="#2350D2" strokeWidth={3.5} strokeDasharray="8 7" />
-      <SvgText x={50} y={61} fontSize={30} fontFamily={fonts.serif} fill="#2350D2" textAnchor="middle">押</SvgText>
+      <Circle cx={50} cy={50} r={44} fill={colors.blueSoft} stroke={colors.blue} strokeWidth={3.5} strokeDasharray="8 7" />
+      <SvgText x={50} y={61} fontSize={30} fontFamily={fonts.serif} fill={colors.blue} textAnchor="middle">押</SvgText>
     </Svg>
   );
 }

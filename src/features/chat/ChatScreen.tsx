@@ -16,7 +16,7 @@ import { ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
 import { TextField } from '@/ui/TextField';
 import { useRun, useToast } from '@/ui/Toast';
-import { colors, fonts, radius } from '@/ui/theme';
+import { colors, fonts, radius, themed } from '@/ui/theme';
 import { useAuth } from '@/lib/auth';
 import { chatKey, keys, useMessages } from '../hooks';
 import { ChatRulesSheet, useChatRulesFirstTime } from './ChatRules';
@@ -241,7 +241,7 @@ function Bubble({ m, showName, showAvatar, onPress }: { m: ChatMessage; showName
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   fill: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.line, backgroundColor: colors.bg },
@@ -259,11 +259,11 @@ const styles = StyleSheet.create({
   name: { marginLeft: 4 },
   bubble: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18 },
   bubbleMine: { backgroundColor: colors.blue, borderBottomRightRadius: 5 },
-  bubbleOther: { backgroundColor: colors.white, borderBottomLeftRadius: 5 },
+  bubbleOther: { backgroundColor: colors.card, borderBottomLeftRadius: 5 },
   bubbleText: { fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.ink },
   bubbleTextMine: { color: colors.white },
   time: { marginHorizontal: 4 },
-  composer: { borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.white, paddingTop: 8, paddingHorizontal: 12, gap: 8 },
+  composer: { borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.card, paddingTop: 8, paddingHorizontal: 12, gap: 8 },
   quick: { gap: 8, paddingHorizontal: 2 },
   quickChip: { paddingHorizontal: 14, minHeight: 36, borderRadius: radius.pill, backgroundColor: colors.blueSoft, alignItems: 'center', justifyContent: 'center' },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
@@ -279,4 +279,4 @@ const styles = StyleSheet.create({
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.inkFaint, alignItems: 'center', justifyContent: 'center' },
   radioOn: { borderColor: colors.blue },
   radioDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: colors.blue },
-});
+}));

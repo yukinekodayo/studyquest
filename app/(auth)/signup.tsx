@@ -12,7 +12,7 @@ import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { TextField } from '@/ui/TextField';
 import { useRun, useToast } from '@/ui/Toast';
-import { colors, fonts } from '@/ui/theme';
+import { colors, fonts, themed } from '@/ui/theme';
 
 export default function SignupScreen() {
   const run = useRun();
@@ -71,7 +71,7 @@ export default function SignupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   title: { paddingTop: 12 },
   form: { gap: 16 },
   avatarSection: { gap: 8 },
@@ -79,4 +79,4 @@ const styles = StyleSheet.create({
   avatarBtn: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
   footer: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingVertical: 8 },
   link: { fontFamily: fonts.bold, color: colors.blue, fontSize: 15 },
-});
+}));

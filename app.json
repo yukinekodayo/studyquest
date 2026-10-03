@@ -5,7 +5,7 @@
     "scheme": "studyquest",
     "version": "0.1.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
     "backgroundColor": "#FBF6EA",
     "splash": {

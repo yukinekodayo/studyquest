@@ -10,7 +10,7 @@ import { Stamp } from '@/ui/Stamp';
 import { Text } from '@/ui/Text';
 import { TextField } from '@/ui/TextField';
 import { useRun } from '@/ui/Toast';
-import { colors, fonts } from '@/ui/theme';
+import { colors, fonts, themed } from '@/ui/theme';
 
 export default function LoginScreen() {
   const run = useRun();
@@ -45,10 +45,10 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   hero: { alignItems: 'center', gap: 8, paddingTop: 32, paddingBottom: 12 },
   brand: { letterSpacing: 1, marginTop: 6 },
   form: { gap: 16 },
   footer: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingVertical: 8 },
   link: { fontFamily: fonts.bold, color: colors.blue, fontSize: 15 },
-});
+}));

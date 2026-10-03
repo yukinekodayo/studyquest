@@ -3,6 +3,7 @@ import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { haptic } from '@/lib/haptics';
 import { STAMP_META, type StampType } from '@/domain/stamps';
 import { Stamp } from './Stamp';
+import { themed } from './theme';
 
 interface Props {
   type: StampType;
@@ -171,9 +172,9 @@ export function PressableStamp({ type, size = 190, claimed, onPress, onStamped }
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   wrap: { alignItems: 'center' },
   area: { alignItems: 'center', justifyContent: 'center' },
   ring: { position: 'absolute', borderWidth: 3 },
   dashed: { position: 'absolute', borderWidth: 2, borderStyle: 'dashed' },
-});
+}));

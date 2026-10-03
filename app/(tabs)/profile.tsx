@@ -17,7 +17,7 @@ import { Sheet } from '@/ui/Sheet';
 import { Stamp } from '@/ui/Stamp';
 import { ErrorState, LoadingState } from '@/ui/States';
 import { Text } from '@/ui/Text';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -177,7 +177,7 @@ function MenuRow({ icon, label, onPress }: { icon: keyof typeof Ionicons.glyphMa
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   who: { flexDirection: 'row', alignItems: 'center', gap: 18 },
@@ -201,4 +201,4 @@ const styles = StyleSheet.create({
   achDetail: { alignItems: 'center', gap: 12, paddingVertical: 8 },
   menu: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 58, borderBottomWidth: 1, borderBottomColor: colors.line },
   menuLabel: { flex: 1 },
-});
+}));

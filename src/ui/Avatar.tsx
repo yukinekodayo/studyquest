@@ -1,9 +1,9 @@
 import { StyleSheet, View } from 'react-native';
 import type { AvatarKey } from '@/domain/validation';
 import { Text } from './Text';
-import { colors, fonts } from './theme';
+import { colors, fonts, getScheme, themed } from './theme';
 
-const PALETTE: Record<AvatarKey, { tint: string; fg: string }> = {
+const LIGHT: Record<AvatarKey, { tint: string; fg: string }> = {
   blue: { tint: '#E3EAFB', fg: '#2350D2' },
   green: { tint: '#DCEBE3', fg: '#2B7A4B' },
   indigo: { tint: '#E2E5F6', fg: '#3B4A9E' },
@@ -13,6 +13,18 @@ const PALETTE: Record<AvatarKey, { tint: string; fg: string }> = {
   violet: { tint: '#EAE2F6', fg: '#6B4FBB' },
   slate: { tint: '#E6E7EB', fg: '#4A5263' },
 };
+
+const DARK: Record<AvatarKey, { tint: string; fg: string }> = {
+  blue: { tint: '#222E52', fg: '#8FAAFF' },
+  green: { tint: '#1D3A2A', fg: '#6FD09A' },
+  indigo: { tint: '#262B4D', fg: '#9AA8F2' },
+  rose: { tint: '#412426', fg: '#F08A8A' },
+  amber: { tint: '#3B3319', fg: '#E3BE5C' },
+  teal: { tint: '#17383A', fg: '#5CCACA' },
+  violet: { tint: '#31294F', fg: '#B49CF2' },
+  slate: { tint: '#2B303D', fg: '#A9B2C6' },
+};
+const PALETTE = themed(() => (getScheme() === 'dark' ? DARK : LIGHT));
 
 export const avatarFg = (color: AvatarKey): string => PALETTE[color].fg;
 
@@ -36,6 +48,6 @@ export function Avatar({ name, color, size = 44, solid = false, ring }: { name: 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   base: { alignItems: 'center', justifyContent: 'center' },
-});
+}));

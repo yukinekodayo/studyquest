@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { formatClock, formatElapsedJa, remainingFraction } from '@/domain/timer';
 import { Text } from '@/ui/Text';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
 
 const SIZE = 280;
 const STROKE = 9;
@@ -43,8 +43,8 @@ export function TimerRing({ plannedMinutes, elapsed, paused }: { plannedMinutes:
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   wrap: { width: SIZE, height: SIZE, alignSelf: 'center' },
   center: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: 6 },
   clock: { fontVariant: ['tabular-nums'] },
-});
+}));

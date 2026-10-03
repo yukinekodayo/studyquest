@@ -8,7 +8,7 @@ import { Button } from '@/ui/Button';
 import { Sheet } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
 import { useRun } from '@/ui/Toast';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
 import { useIncomingRequests, useReceivedReactions, useStats } from './hooks';
 
 export const REACTIONS: Array<{ kind: ReactionKind; emoji: string; label: string }> = [
@@ -64,8 +64,8 @@ export function NotificationsSheet({ visible, onClose }: { visible: boolean; onC
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   grow: { flex: 1 },
   cheers: { gap: 6 },
-});
+}));

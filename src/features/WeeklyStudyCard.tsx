@@ -5,7 +5,7 @@ import { formatPlanned } from '@/domain/timer';
 import type { StudySummary } from '@/types/database';
 import { Card } from '@/ui/Card';
 import { Text } from '@/ui/Text';
-import { colors } from '@/ui/theme';
+import { colors, themed } from '@/ui/theme';
 
 const CHART_H = 84;
 const MIN_SCALE_MIN = 30; // 少ない日でも、棒が極端に大きく見えないように
@@ -70,7 +70,7 @@ export function WeeklyStudyCard({ summary, showTotal = false }: { summary: Study
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   totalRow: { flexDirection: 'row', alignItems: 'baseline', gap: 12, marginTop: 2 },
   chart: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 14 },
@@ -80,4 +80,4 @@ const styles = StyleSheet.create({
   bar: { width: 18, borderTopLeftRadius: 5, borderTopRightRadius: 5 },
   empty: { marginTop: 10 },
   totalLine: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.line, marginTop: 14, paddingTop: 12 },
-});
+}));

@@ -16,7 +16,7 @@ import { Screen } from '@/ui/Screen';
 import { Stamp } from '@/ui/Stamp';
 import { Text } from '@/ui/Text';
 import { useRun, useToast } from '@/ui/Toast';
-import { colors, radius } from '@/ui/theme';
+import { colors, radius, themed } from '@/ui/theme';
 import { useStartTask } from '../actions';
 import { TaskMark } from '../TaskParts';
 
@@ -177,7 +177,7 @@ export function DoneView({ task, tasks, stats, result }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themed(() => StyleSheet.create({
   content: { gap: 18 },
   hero: { alignItems: 'center', gap: 4, paddingTop: 4 },
   doneTitle: { marginTop: 10 },
@@ -193,4 +193,4 @@ const styles = StyleSheet.create({
   tease: { flexDirection: 'row', alignItems: 'center', gap: 12, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 14 },
   grow: { flex: 1 },
   footer: { gap: 4 },
-});
+}));

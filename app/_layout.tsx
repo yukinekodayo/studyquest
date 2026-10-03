@@ -5,10 +5,11 @@ import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { Fragment, useEffect } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { ThemeProvider } from '@/lib/theme';
 import { QueryProvider } from '@/lib/query';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { Screen } from '@/ui/Screen';
@@ -49,10 +50,17 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryProvider>
         <AuthProvider>
-          <ToastProvider>
-            <StatusBar style="dark" />
-            <Gate />
-          </ToastProvider>
+          <ThemeProvider>
+            {(scheme) => (
+              // 配色を切り替えたとき、この下だけ作り直す(ログイン状態・画面位置は保たれる)
+              <Fragment key={scheme}>
+                <ToastProvider>
+                  <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+                  <Gate />
+                </ToastProvider>
+              </Fragment>
+            )}
+          </ThemeProvider>
         </AuthProvider>
       </QueryProvider>
     </SafeAreaProvider>

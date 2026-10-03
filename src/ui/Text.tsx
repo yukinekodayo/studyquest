@@ -1,9 +1,9 @@
 import { Text as RNText, type TextProps, type TextStyle } from 'react-native';
-import { colors, fonts } from './theme';
+import { colors, fonts, themed } from './theme';
 
 export type TextVariant = 'display' | 'title' | 'heading' | 'body' | 'bodyBold' | 'caption' | 'label' | 'num' | 'numMedium';
 
-const variants: Record<TextVariant, TextStyle> = {
+const variants = themed((): Record<TextVariant, TextStyle> => ({
   /** ページ見出し(明朝体) */
   display: { fontFamily: fonts.serif, fontSize: 30, lineHeight: 40, color: colors.ink },
   title: { fontFamily: fonts.serif, fontSize: 22, lineHeight: 30, color: colors.ink },
@@ -14,7 +14,7 @@ const variants: Record<TextVariant, TextStyle> = {
   label: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 17, color: colors.inkSoft },
   num: { fontFamily: fonts.num, fontSize: 28, lineHeight: 34, color: colors.ink },
   numMedium: { fontFamily: fonts.numMedium, fontSize: 20, lineHeight: 26, color: colors.ink },
-};
+}));
 
 export interface AppTextProps extends TextProps {
   variant?: TextVariant;
