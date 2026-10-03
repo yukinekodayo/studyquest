@@ -11,6 +11,7 @@
    - 「Success」と出れば完了です。もう一度実行するとエラーになります(2回目は不要)。
 4. 左メニュー **Authentication → Sign In / Providers → Email** を開き、**Confirm email をオフ** にして保存。
    - オンのままだと、登録後にメール確認が必要になります。
+   - **注意: Confirm email をオフにするのは、手元で試すためのテスト用設定です。** 他の人に公開する本番のプロジェクトでは、なりすまし登録を防ぐため必ず **オン** にしてください(あわせてメールの送信設定も確認)。
 5. 左メニュー **Project Settings → API** を開き、次の2つを控える。
    - **Project URL**(`https://xxxx.supabase.co`)
    - **anon public** のキー(`service_role` のキーは使わない・どこにも貼らない)

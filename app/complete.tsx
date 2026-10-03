@@ -44,7 +44,7 @@ export default function CompleteScreen() {
   const progress = mustProgress(tasks.data ?? []);
   const week = streak % 7 === 0 ? 7 : streak % 7;
   const next = nextBigMilestone(streak);
-  const total = progress.total || s.today_streak;
+  const total = progress.total;
 
   const press = async (): Promise<boolean> => {
     try {
@@ -89,7 +89,7 @@ export default function CompleteScreen() {
         <View style={styles.head}>
           <Text variant="label" color={colors.blue} style={styles.eyebrow} testID="all-done">TODAY COMPLETE</Text>
           <Text variant="display" size={30} align="center">今日のクエスト、クリア</Text>
-          <Text variant="caption" size={13} align="center">{total}つのタスクをぜんぶ達成しました</Text>
+          <Text variant="caption" size={13} align="center">{total > 0 ? `${total}つのタスクをぜんぶ達成しました` : '今日のタスクをぜんぶ達成しました'}</Text>
         </View>
       </FadeIn>
 

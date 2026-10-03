@@ -25,7 +25,7 @@ export function Avatar({ name, color, size = 44, solid = false, ring }: { name: 
       accessibilityLabel={`${name}のアイコン`}
       style={[
         styles.base,
-        { width: size, height: size, borderRadius: size / 2, backgroundColor: solid ? colors.blue : p.tint },
+        { width: size, height: size, borderRadius: size / 2, backgroundColor: solid ? p.fg : p.tint },
         ring ? { borderWidth: 2, borderColor: ring } : null,
       ]}
     >

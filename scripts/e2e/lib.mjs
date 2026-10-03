@@ -36,6 +36,7 @@ export async function signup(page, { nickname, avatar = 'blue', email, password 
   await tid(page, 'signup-nickname').fill(nickname);
   await tid(page, 'signup-email').fill(email);
   await tid(page, 'signup-password').fill(password);
+  await tid(page, 'signup-password-confirm').fill(password);
   await tid(page, 'signup-submit').click();
   await page.waitForURL('**/home', { timeout: 20000 });
 }
